@@ -11480,6 +11480,10 @@ msgstr "מצטערים, לא הצלחנו להוריד את התעודה. נא �
 msgid "Source"
 msgstr "מקור"
 
+#: apps/remix/app/components/general/source-code-footer.tsx
+msgid "Source code"
+msgstr "קוד מקור"
+
 #: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.sso.tsx
 msgid "Space-separated list of domains. Leave empty to allow all domains."
 msgstr "רשימת דומיינים מופרדים ברווח. השאירו ריק כדי לאפשר את כל הדומיינים."
@@ -12859,7 +12863,7 @@ msgstr "מסמך זה נוצר באמצעות קישור ישיר."
 
 #: packages/email/template-components/template-footer.tsx
 msgid "This document was sent using <0>Documenso</0>."
-msgstr "מסמך זה נשלח באמצעות <0>VoIPe</0>."
+msgstr "מסמך זה נשלח באמצעות <0>מערכת חתימה בקוד פתוח</0>."
 
 #: apps/remix/app/components/dialogs/envelope-duplicate-dialog.tsx
 msgid "This document will be duplicated."

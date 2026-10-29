@@ -7,6 +7,7 @@ CLIENT_PATTERNS = [
     r'^apps/remix/app/components/general/direct-template/',
     r'^apps/remix/app/components/general/pdf-viewer/',
     r'^apps/remix/app/components/general/generic-error-layout',
+    r'^apps/remix/app/components/general/source-code-footer',
     r'^apps/remix/app/components/general/document/document-certificate-qr-view',
     r'^apps/remix/app/components/dialogs/sign-field-',
     r'^apps/remix/app/components/embed/(?!authoring/)',
