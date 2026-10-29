@@ -23,6 +23,7 @@ const LANGUAGE_LABELS: Record<string, string> = {
   ja: 'Japanese',
   ko: 'Korean',
   zh: 'Chinese',
+  he: 'Hebrew',
 };
 
 const DEFAULT_COLORS = {

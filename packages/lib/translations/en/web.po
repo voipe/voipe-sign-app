@@ -6624,6 +6624,10 @@ msgstr "Having an assistant as the last signer means they will be unable to take
 msgid "Height:"
 msgstr "Height:"
 
+#: packages/lib/constants/i18n.ts
+msgid "Hebrew"
+msgstr "Hebrew"
+
 #: apps/remix/app/components/embed/embed-document-signing-page-v1.tsx
 msgid "Help complete the document for other signers."
 msgstr "Help complete the document for other signers."
