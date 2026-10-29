@@ -15,7 +15,7 @@ const SIGNATURE_FONT_FAMILY_CAVEAT = 'Caveat';
 // text would otherwise render with JP forms. Family names sync with
 // apps/remix/app/app.css and packages/lib/server-only/pdf/helpers.ts.
 const SIGNATURE_FONT_FAMILY_NOTO =
-  '"Noto Sans", "Noto Sans Chinese", "Noto Sans Japanese", "Noto Sans Korean", sans-serif';
+  '"Noto Sans", "Noto Sans Hebrew", "Noto Sans Chinese", "Noto Sans Japanese", "Noto Sans Korean", sans-serif';
 
 const isASCII = (str: string) => /^\p{ASCII}*$/u.test(str);
 

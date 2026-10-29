@@ -37,6 +37,14 @@ export const ensureFontLibrary = () => {
       ['Noto Sans Korean']: [path.join(fontPath, 'noto-sans-korean.ttf')],
     });
   }
+
+  // VoIPe fork (Track F2d): Hebrew glyphs for certificate/audit-log pages and inserted fields.
+  if (!FontLibrary.has('Noto Sans Hebrew')) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    FontLibrary.use({
+      ['Noto Sans Hebrew']: [path.join(fontPath, 'noto-sans-hebrew.ttf')],
+    });
+  }
 };
 
 type RecipientPlaceholderInfo = {

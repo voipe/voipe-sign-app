@@ -15,7 +15,7 @@ import { match, P } from 'ts-pattern';
 import { UAParser } from 'ua-parser-js';
 
 import { DOCUMENT_STATUS } from '../../constants/document';
-import { APP_I18N_OPTIONS } from '../../constants/i18n';
+import { APP_I18N_OPTIONS, getLanguageDirection } from '../../constants/i18n';
 import { RECIPIENT_ROLES_DESCRIPTION } from '../../constants/recipient-roles';
 import type { TDocumentAuditLog } from '../../types/document-audit-logs';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
@@ -56,6 +56,15 @@ const textSm = 9;
 const textXs = 8;
 const fontMedium = '500';
 
+// VoIPe fork (Track F2d): Inter has no Hebrew glyphs, so every text falls back to the bundled
+// Noto Sans Hebrew (OFL, public/fonts). Translated labels get an RTL base direction for RTL
+// locales so mixed Hebrew/Latin strings keep their logical reading order. Data values (dates,
+// IPs, emails, ids) keep the default LTR base direction.
+const FONT_FAMILY = 'Inter, Noto Sans Hebrew';
+
+const rtlLabel = (i18n: I18n): { direction?: string } =>
+  getLanguageDirection(i18n.locale) === 'rtl' ? { direction: 'rtl' } : {};
+
 const pageTopMargin = 60;
 const pageBottomMargin = 27;
 const contentMaxWidth = 768;
@@ -67,6 +76,7 @@ type RenderOverviewCardLabelAndTextOptions = {
   text: string | string[];
   width: number;
   groupX?: number;
+  direction?: string;
 };
 
 const renderOverviewCardLabels = (options: RenderOverviewCardLabelAndTextOptions) => {
@@ -82,8 +92,9 @@ const renderOverviewCardLabels = (options: RenderOverviewCardLabelAndTextOptions
     x: 0,
     y: 0,
     text: options.label,
+    direction: options.direction ?? 'inherit',
     fontStyle: fontMedium,
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     fill: textForeground,
     fontSize: textSm,
   });
@@ -95,7 +106,7 @@ const renderOverviewCardLabels = (options: RenderOverviewCardLabelAndTextOptions
       x: 0,
       y: label.height() + labelYSpacing,
       width: width - label.width(),
-      fontFamily: 'Inter',
+      fontFamily: FONT_FAMILY,
       text,
       fill: textForeground,
       wrap: 'char',
@@ -109,7 +120,7 @@ const renderOverviewCardLabels = (options: RenderOverviewCardLabelAndTextOptions
         x: 0,
         y: group.getClientRect().height + 4,
         width: width - label.width(),
-        fontFamily: 'Inter',
+        fontFamily: FONT_FAMILY,
         text: '• ' + textValue,
         fill: textForeground,
         wrap: 'char',
@@ -131,10 +142,11 @@ type RenderVerticalLabelAndTextOptions = {
   x?: number;
   y?: number;
   textFontFamily?: string;
+  direction?: string;
 };
 
 const renderVerticalLabelAndText = (options: RenderVerticalLabelAndTextOptions) => {
-  const { label, text, width, align, x, y, textFontFamily } = options;
+  const { label, text, width, align, x, y, textFontFamily, direction } = options;
 
   const group = new Konva.Group({
     x: x ?? 0,
@@ -143,7 +155,8 @@ const renderVerticalLabelAndText = (options: RenderVerticalLabelAndTextOptions) 
 
   const konvaLabel = new Konva.Text({
     align: align ?? 'left',
-    fontFamily: 'Inter',
+    direction: direction ?? 'inherit',
+    fontFamily: FONT_FAMILY,
     width,
     text: label,
     fontSize: textXs,
@@ -155,7 +168,7 @@ const renderVerticalLabelAndText = (options: RenderVerticalLabelAndTextOptions) 
   const konvaText = new Konva.Text({
     y: group.getClientRect().height + 6,
     align: align ?? 'left',
-    fontFamily: textFontFamily ?? 'Inter',
+    fontFamily: textFontFamily ?? FONT_FAMILY,
     width,
     text: text,
     fontSize: textXs,
@@ -198,11 +211,13 @@ const renderOverviewCard = (options: RenderOverviewCardOptions) => {
 
   const envelopeIdLabel = renderOverviewCardLabels({
     label: i18n._(msg`Envelope ID`),
+    ...rtlLabel(i18n),
     text: envelope.id,
     width: columnWidth,
   });
   const ownerLabel = renderOverviewCardLabels({
     label: i18n._(msg`Owner`),
+    ...rtlLabel(i18n),
     text: `${envelopeOwner.name} (${envelopeOwner.email})`,
     width: columnWidth,
     groupX: columnWidth + columnSpacing,
@@ -219,12 +234,14 @@ const renderOverviewCard = (options: RenderOverviewCardOptions) => {
 
   const statusLabel = renderOverviewCardLabels({
     label: i18n._(msg`Status`),
+    ...rtlLabel(i18n),
     text: i18n._(envelope.deletedAt ? msg`Deleted` : DOCUMENT_STATUS[envelope.status].description).toUpperCase(),
     width: columnWidth,
   });
   const timeZoneLabel = renderOverviewCardLabels({
     label: i18n._(msg`Time Zone`),
-    text: envelope.documentMeta?.timezone || 'N/A',
+    ...rtlLabel(i18n),
+    text: envelope.documentMeta?.timezone || i18n._(msg`N/A`),
     width: columnWidth,
     groupX: columnWidth + columnSpacing,
   });
@@ -240,6 +257,7 @@ const renderOverviewCard = (options: RenderOverviewCardOptions) => {
 
   const createdAtLabel = renderOverviewCardLabels({
     label: i18n._(msg`Created At`),
+    ...rtlLabel(i18n),
     text: DateTime.fromJSDate(envelope.createdAt)
       .setLocale(APP_I18N_OPTIONS.defaultLocale)
       .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)'),
@@ -247,6 +265,7 @@ const renderOverviewCard = (options: RenderOverviewCardOptions) => {
   });
   const lastUpdatedLabel = renderOverviewCardLabels({
     label: i18n._(msg`Last Updated`),
+    ...rtlLabel(i18n),
     text: DateTime.fromJSDate(envelope.updatedAt)
       .setLocale(APP_I18N_OPTIONS.defaultLocale)
       .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)'),
@@ -265,12 +284,14 @@ const renderOverviewCard = (options: RenderOverviewCardOptions) => {
 
   const enclosedDocumentsLabel = renderOverviewCardLabels({
     label: i18n._(msg`Enclosed Documents`),
+    ...rtlLabel(i18n),
     text: envelopeItems,
     width: columnWidth,
   });
 
   const recipientsLabel = renderOverviewCardLabels({
     label: i18n._(msg`Recipients`),
+    ...rtlLabel(i18n),
     text: recipients.map(
       (recipient) =>
         `[${i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].roleName)}] ${recipient.name} (${recipient.email})`,
@@ -326,12 +347,19 @@ const renderRow = (options: RenderRowOptions) => {
     fill: getAuditLogIndicatorColor(auditLog.type),
   });
 
+  const formattedAction = formatDocumentAuditLogAction(i18n, auditLog);
+
   const auditLogTypeText = new Konva.Text({
     x: indicatorWidth + indicatorPaddingRight,
     y: 0,
     width: columnWidth - indicatorWidth - indicatorPaddingRight,
-    text: auditLog.type.replace(/_/g, ' '),
-    fontFamily: 'Inter',
+    // VoIPe fork: non-English PDFs show the translated event name instead of the raw type code.
+    text:
+      i18n.locale === APP_I18N_OPTIONS.sourceLang
+        ? auditLog.type.replace(/_/g, ' ')
+        : formattedAction.anonymousDescription,
+    ...rtlLabel(i18n),
+    fontFamily: FONT_FAMILY,
     fontSize: textSm,
     fontStyle: fontMedium,
     fill: textMutedForeground,
@@ -341,8 +369,9 @@ const renderRow = (options: RenderRowOptions) => {
     x: indicatorWidth + indicatorPaddingRight,
     y: auditLogTypeText.height() + 4,
     width: columnWidth - indicatorWidth - indicatorPaddingRight,
-    text: formatDocumentAuditLogAction(i18n, auditLog).description,
-    fontFamily: 'Inter',
+    text: formattedAction.description,
+    ...rtlLabel(i18n),
+    fontFamily: FONT_FAMILY,
     fontSize: textSm,
     fill: textForeground,
   });
@@ -351,7 +380,7 @@ const renderRow = (options: RenderRowOptions) => {
     x: columnWidth + columnSpacing,
     width: columnWidth,
     text: DateTime.fromJSDate(auditLog.createdAt).setLocale(APP_I18N_OPTIONS.defaultLocale).toLocaleString(dateFormat),
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     align: 'right',
     fontSize: textSm,
     fill: textMutedForeground,
@@ -388,7 +417,8 @@ const renderRow = (options: RenderRowOptions) => {
   // Row 1 Column 1
   const userLabel = renderVerticalLabelAndText({
     label: i18n._(msg`User`).toUpperCase(),
-    text: auditLog.email || 'N/A',
+    ...rtlLabel(i18n),
+    text: auditLog.email || i18n._(msg`N/A`),
     align: 'left',
     width: columnWidth,
     textFontFamily: 'ui-monospace',
@@ -397,7 +427,8 @@ const renderRow = (options: RenderRowOptions) => {
   // Row 1 Column 2
   const ipAddressLabel = renderVerticalLabelAndText({
     label: i18n._(msg`IP Address`).toUpperCase(),
-    text: auditLog.ipAddress || 'N/A',
+    ...rtlLabel(i18n),
+    text: auditLog.ipAddress || i18n._(msg`N/A`),
     align: 'right',
     x: columnWidth + columnSpacing,
     width: columnWidth,
@@ -413,6 +444,7 @@ const renderRow = (options: RenderRowOptions) => {
   // Row 2 Column 1
   const userAgentLabel = renderVerticalLabelAndText({
     label: i18n._(msg`User Agent`).toUpperCase(),
+    ...rtlLabel(i18n),
     text: i18n._(formatUserAgent(auditLog.userAgent, userAgentInfo)),
     align: 'left',
     width,
@@ -526,8 +558,9 @@ const renderPages = (options: RenderPagesOptions) => {
       height: pageTopMargin,
       verticalAlign: 'middle',
       text: i18n._(msg`Audit Log`),
+      ...rtlLabel(i18n),
       fill: textForeground,
-      fontFamily: 'Inter',
+      fontFamily: FONT_FAMILY,
       fontSize: titleFontSize,
       fontStyle: '700',
     });
@@ -622,7 +655,8 @@ export async function renderAuditLogs({
       x: margin,
       y: pageHeight - textXs - 10,
       text: `${i18n._(msg`Envelope ID`)}: ${envelope.id}`,
-      fontFamily: 'Inter',
+      ...rtlLabel(i18n),
+      fontFamily: FONT_FAMILY,
       fontSize: textXs,
       fill: textMutedForegroundLight,
     });
@@ -667,7 +701,8 @@ export async function renderAuditLogs({
       x: margin,
       y: pageHeight - textXs - 10,
       text: `${i18n._(msg`Envelope ID`)}: ${envelope.id}`,
-      fontFamily: 'Inter',
+      ...rtlLabel(i18n),
+      fontFamily: FONT_FAMILY,
       fontSize: textXs,
       fill: textMutedForegroundLight,
     });

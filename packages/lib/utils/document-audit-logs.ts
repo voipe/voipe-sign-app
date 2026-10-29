@@ -671,5 +671,7 @@ export const formatDocumentAuditLogAction = (i18n: I18n, auditLog: TDocumentAudi
   return {
     prefix,
     description: i18n._(selectedDescription),
+    // VoIPe fork: translated, actor-less wording used as the event title in non-English audit-log PDFs.
+    anonymousDescription: i18n._(description.anonymous),
   };
 };

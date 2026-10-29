@@ -15,7 +15,7 @@ import { UAParser } from 'ua-parser-js';
 import { renderSVG } from 'uqr';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
-import { APP_I18N_OPTIONS } from '../../constants/i18n';
+import { APP_I18N_OPTIONS, getLanguageDirection } from '../../constants/i18n';
 import { getSignatureFontFamily } from '../../constants/pdf';
 import { RECIPIENT_ROLE_SIGNING_REASONS, RECIPIENT_ROLES_DESCRIPTION } from '../../constants/recipient-roles';
 import type { TDocumentAuditLogBaseSchema } from '../../types/document-audit-logs';
@@ -93,6 +93,15 @@ const contentMaxWidth = 768;
 
 const titleFontSize = 18;
 
+// VoIPe fork (Track F2d): Inter has no Hebrew glyphs, so every text falls back to the bundled
+// Noto Sans Hebrew (OFL, public/fonts). Translated labels get an RTL base direction for RTL
+// locales so mixed Hebrew/Latin strings keep their logical reading order. Data values (dates,
+// IPs, emails, ids) keep the default LTR base direction.
+const FONT_FAMILY = 'Inter, Noto Sans Hebrew';
+
+const rtlLabel = (i18n: I18n): { direction?: string } =>
+  getLanguageDirection(i18n.locale) === 'rtl' ? { direction: 'rtl' } : {};
+
 type RenderLabelAndTextOptions = {
   label: string;
   text: string;
@@ -100,6 +109,7 @@ type RenderLabelAndTextOptions = {
   y?: number;
   labelFill?: string;
   valueFill?: string;
+  i18n?: I18n;
 };
 
 const renderLabelAndText = (options: RenderLabelAndTextOptions) => {
@@ -112,14 +122,17 @@ const renderLabelAndText = (options: RenderLabelAndTextOptions) => {
   const labelFill = options.labelFill ?? textMutedForeground;
   const valueFill = options.valueFill ?? textMutedForeground;
 
+  const isRtl = options.i18n ? getLanguageDirection(options.i18n.locale) === 'rtl' : false;
+
   const label = new Konva.Text({
     x: 0,
     y: 0,
     text: `${options.label}: `,
     fontStyle: fontMedium,
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     fill: labelFill,
     fontSize: textSm,
+    ...(options.i18n ? rtlLabel(options.i18n) : {}),
   });
 
   group.add(label);
@@ -128,12 +141,18 @@ const renderLabelAndText = (options: RenderLabelAndTextOptions) => {
     x: label.width(),
     y: 0,
     width: width - label.width(),
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     text: options.text,
     fill: valueFill,
     wrap: 'char',
     fontSize: textSm,
   });
+
+  // RTL: label on the right edge, value right-aligned to its left.
+  if (isRtl) {
+    label.x(Math.max(width - label.width(), 0));
+    value.setAttrs({ x: 0, align: 'right' });
+  }
 
   group.add(value);
 
@@ -155,7 +174,7 @@ const renderRowHeader = (options: RenderRowHeaderOptions) => {
   const headerRow = new Konva.Group();
 
   const headerFontStyling = {
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     fontSize: 11,
     fontStyle: fontMedium,
     verticalAlign: 'middle',
@@ -167,6 +186,7 @@ const renderRowHeader = (options: RenderRowHeaderOptions) => {
     x: rowPadding,
     width: columnOneWidth,
     text: i18n._(msg`Signer Events`),
+    ...rtlLabel(i18n),
     ...headerFontStyling,
   });
   headerRow.add(header1);
@@ -175,6 +195,7 @@ const renderRowHeader = (options: RenderRowHeaderOptions) => {
     x: columnOneWidth + rowPadding,
     width: columnTwoWidth,
     text: i18n._(msg`Signature`),
+    ...rtlLabel(i18n),
     ...headerFontStyling,
   });
   headerRow.add(header2);
@@ -183,6 +204,7 @@ const renderRowHeader = (options: RenderRowHeaderOptions) => {
     x: columnOneWidth + columnTwoWidth + rowPadding,
     width: columnThreeWidth,
     text: i18n._(msg`Details`),
+    ...rtlLabel(i18n),
     ...headerFontStyling,
   });
   headerRow.add(header3);
@@ -211,7 +233,7 @@ const renderColumnOne = (options: RenderColumnOptions) => {
 
   const textFontStyling = {
     x: 0,
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     wrap: 'char',
     lineHeight: 1.2,
     fill: textMutedForeground,
@@ -242,6 +264,7 @@ const renderColumnOne = (options: RenderColumnOptions) => {
   const roleText = new Konva.Text({
     y: columnGroup.getClientRect().height + textSectionPadding,
     text: i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].roleName),
+    ...rtlLabel(i18n),
     fontSize: textSm,
     ...textFontStyling,
   });
@@ -250,6 +273,7 @@ const renderColumnOne = (options: RenderColumnOptions) => {
   const authLabel = new Konva.Text({
     y: columnGroup.getClientRect().height + textSectionPadding,
     text: `${i18n._(msg`Authentication Level`)}:`,
+    ...rtlLabel(i18n),
     fontSize: textSm,
     fontStyle: fontMedium,
     ...textFontStyling,
@@ -259,6 +283,7 @@ const renderColumnOne = (options: RenderColumnOptions) => {
   const authValue = new Konva.Text({
     y: columnGroup.getClientRect().height,
     text: recipient.authLevel,
+    ...rtlLabel(i18n),
     fontSize: textSm,
     ...textFontStyling,
   });
@@ -355,9 +380,10 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
       x: 0,
       y: isRejected ? 0 : signatureHeight + 10,
       text: `${i18n._(msg`Signature ID`)}:`,
+      ...rtlLabel(i18n),
       fill: textMutedForeground,
       width: columnWidth,
-      fontFamily: 'Inter',
+      fontFamily: FONT_FAMILY,
       fontSize: textSm,
       fontStyle: fontMedium,
       lineHeight: 1.4,
@@ -379,9 +405,9 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
     const naText = new Konva.Text({
       x: 0,
       y: 0,
-      text: 'N/A',
+      text: i18n._(msg`N/A`),
       fill: textMutedForeground,
-      fontFamily: 'Inter',
+      fontFamily: FONT_FAMILY,
       fontSize: textSm,
     });
     column.add(naText);
@@ -393,6 +419,7 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
     label: i18n._(msg`IP Address`),
     text: relevantLog?.ipAddress ?? i18n._(msg`Unknown`),
     width,
+    i18n,
     y: column.getClientRect().height + 6,
   });
   column.add(ipLabelAndText);
@@ -401,6 +428,7 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
     label: i18n._(msg`Device`),
     text: getDevice(relevantLog?.userAgent),
     width,
+    i18n,
     y: column.getClientRect().height + 6,
   });
   column.add(deviceLabelAndText);
@@ -480,6 +508,7 @@ const renderColumnThree = (options: RenderColumnOptions) => {
       label: item.label,
       text: item.value,
       width,
+      i18n,
       y: column.getClientRect().height + (index === 0 ? 0 : 8),
       labelFill: item.labelFill,
       valueFill: item.valueFill,
@@ -574,8 +603,9 @@ const renderBranding = async ({ qrToken, i18n }: { qrToken: string | null; i18n:
     x: 0,
     verticalAlign: 'middle',
     text: i18n._(msg`Signing certificate provided by`) + ':',
+    ...rtlLabel(i18n),
     fontStyle: fontMedium,
-    fontFamily: 'Inter',
+    fontFamily: FONT_FAMILY,
     fontSize: textSm,
     height: brandingHeight,
   });
@@ -775,7 +805,8 @@ export async function renderCertificate({
       height: pageTopMargin,
       verticalAlign: 'middle',
       text: i18n._(msg`Signing Certificate`),
-      fontFamily: 'Inter',
+      ...rtlLabel(i18n),
+      fontFamily: FONT_FAMILY,
       fontSize: titleFontSize,
       fontStyle: '700',
     });
@@ -807,7 +838,8 @@ export async function renderCertificate({
       x: margin,
       y: pageHeight - textXs - 10,
       text: `${i18n._(msg`Envelope ID`)}: ${envelopeId}`,
-      fontFamily: 'Inter',
+      ...rtlLabel(i18n),
+      fontFamily: FONT_FAMILY,
       fontSize: textXs,
       fill: textMutedForegroundLight,
     });
@@ -835,7 +867,8 @@ export async function renderCertificate({
       x: margin,
       y: pageHeight - textXs - 10,
       text: `${i18n._(msg`Envelope ID`)}: ${envelopeId}`,
-      fontFamily: 'Inter',
+      ...rtlLabel(i18n),
+      fontFamily: FONT_FAMILY,
       fontSize: textXs,
       fill: textMutedForegroundLight,
     });
