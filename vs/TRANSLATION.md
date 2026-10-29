@@ -6,8 +6,8 @@ Catalog: `packages/lib/translations/he/web.po` (lingui, PO format, `Plural-Forms
 
 | Scope | Translated | Total | % |
 |---|---|---|---|
-| Client-facing (signing pages, emails, certificate/audit PDF, shared components on those pages) | 835 | 835 | 100 % |
-| Whole catalog (incl. admin/authenticated UI) | 3410 | 3410 | 100 % |
+| Client-facing (signing pages, emails, certificate/audit PDF, shared components on those pages) | 836 | 836 | 100 % |
+| Whole catalog (incl. admin/authenticated UI) | 3411 | 3411 | 100 % |
 
 Validator: `python3 vs/tools/check_po.py packages/lib/translations/he/web.po --scope` → 0 errors
 (same placeholders, JSX tags, ICU plural/select heads and `#` as the msgid; balanced braces; no vendor name).
@@ -15,7 +15,8 @@ Validator: `python3 vs/tools/check_po.py packages/lib/translations/he/web.po --s
 "Client-facing" is defined by source path in `vs/tools/scope.py` (`_recipient+`, `_share+`, `document-signing/`,
 `envelope-signing/`, `direct-template/`, `pdf-viewer/`, `sign-field-*` dialogs, non-authoring `embed/`,
 `[__htmltopdf]` certificate/audit routes, the signature disclosure, `packages/email`, email job handlers,
-`server-only/pdf`, audit-log formatting, recipient roles, signature pad, field rendering, dialog/sheet primitives).
+`server-only/pdf`, audit-log formatting, recipient roles, signature pad, field rendering, dialog/sheet primitives,
+the source-code footer).
 
 ## How the catalog is built and how fallback works
 
@@ -37,6 +38,10 @@ Validator: `python3 vs/tools/check_po.py packages/lib/translations/he/web.po --s
   "the document". Same for `Recipient role actioned` (used only in the direct-template email).
 - "Documenso" never appears in Hebrew; it is replaced by "VoIPe" or by neutral wording.
 - Email is written דוא״ל (gershayim U+05F4).
+- The English fallback catalog (`en/web.po`) carries neutral msgstr overrides for 23 client-facing msgids that named the
+  vendor (see `BRANDING.md`); msgids are unchanged, so `lingui extract` keeps the overrides.
+- The admin/authenticated UI (2575 strings) was drafted in four parallel batches with the same glossary and validated
+  with the same script; it has had less review than the client-facing scope.
 
 ## Items for Nir's review (legal / wording decisions)
 
@@ -46,6 +51,39 @@ Validator: `python3 vs/tools/check_po.py packages/lib/translations/he/web.po --s
 - The consent text under the signature ("By proceeding with your electronic signature…") — legal wording.
 - Typed delete confirmations in the admin UI ask for the Hebrew phrase (e.g. "מחיקת {0}"), because the check
   compares against the same translated string.
+
+## Which language a signer sees (upstream behaviour, not changed)
+
+- **Signing pages:** the UI locale comes from the `lang` cookie, else the browser's `Accept-Language` (first entry,
+  e.g. `he-IL` → `he`). It does **not** follow the document's `meta.language`. A client whose phone/browser is set to
+  English sees the English signing UI (with RTL off). Making the signing page follow the document language would be a
+  functional change (DB lookup in the root loader); left as a decision for VoIPe.
+- **Emails, certificate and audit log:** rendered in the document's `meta.language` (`he` → Hebrew, RTL).
+
+## What must be verified visually (cannot be run on the build host)
+
+- **QA-21 (RTL, iOS Safari + Android Chrome):** `<html dir="rtl" lang="he">` on `/sign/<token>`; signer header,
+  sidebar/widget, dialogs (signature pad, text/number/email/name dialogs, reject dialog, complete dialog) laid out
+  right-to-left; back/next arrows mirrored; email inputs and the 2FA/PIN code input stay LTR; the PDF pages and the field
+  overlays are not mirrored and fields sit exactly on their boxes (`dir="ltr"` on `[data-pdf-content]` and on the field
+  portal); progress bar fills from the right; "קוד מקור" footer visible and links to the repo; no horizontal scroll.
+- **QA-07/25 (emails, Gmail + Outlook):** with `meta.language = "he"` the invite/reminder/completed/rejected emails are
+  Hebrew and right-aligned (`dir="rtl"` on `<html>`, `<body>` and the body table cell); check Outlook desktop (Word
+  engine) alignment; buttons centred; no vendor name (with the `BRANDING.md` §1 configuration). Check the subject
+  line wording, e.g. "הוזמנתם על ידי VoIPe לחתום על המסמך".
+- **QA-09/11 (sealed PDF):**
+  1. Certificate and audit-log pages are in Hebrew and contain no tofu boxes (Noto Sans Hebrew registered from
+     `public/fonts/noto-sans-hebrew.ttf`; Konva font list `Inter, "Noto Sans Hebrew"`; skia-canvas falls back per glyph).
+  2. Hebrew labels read correctly right-to-left, including mixed strings ("כתובת IP", "קוד 2FA", "מזהה מעטפה: <id>"):
+     labels/titles/event descriptions are drawn with an RTL base direction (`Konva.Text direction: 'rtl'`).
+  3. On the certificate, each "label: value" pair is mirrored (label at the right edge, value right-aligned to its left).
+     The **table column order is not mirrored** (Signer events | Signature | Details stay left-to-right); accept or
+     raise as follow-up.
+  4. Hebrew signer names (column 1, audit log) and a typed Hebrew signature render in the right order (the signature
+     font chain now includes "Noto Sans Hebrew"; inserted NAME/TEXT fields use the same chain).
+  5. `pdftotext -layout` shows Hebrew in logical order (QA-09 text check). If it shows reversed words, the PDF text is
+     still correct visually; record the pdftotext result and the visual check separately.
+  6. Dates stay `yyyy-MM-dd hh:mm:ss a (ZZZZ)` (upstream fixed format), IPs/emails/ids LTR.
 
 ## Client-facing strings for review
 
@@ -614,275 +652,276 @@ Validator: `python3 vs/tools/check_po.py packages/lib/translations/he/web.po --s
 | 561 | Something went wrong while rendering the document, some fields may be missing or corrupted. | משהו השתבש בהצגת המסמך, וייתכן שחלק מהשדות חסרים או פגומים. | packages/lib/constants/pdf-viewer-i18n.ts, packages/lib/constants/pdf-viewer-i18n.ts |
 | 562 | Something went wrong while signing you in. Please try again. | משהו השתבש בהתחברות. נא לנסות שוב. | apps/remix/app/components/embed/embed-popup-auth.tsx |
 | 563 | Something went wrong. Close this window and try again. | משהו השתבש. נא לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 564 | Starting sign in... | ההתחברות מתחילה... | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 565 | Status | סטטוס | apps/remix/app/routes/_internal+/[__htmltopdf]+/audit-log.tsx, packages/lib/server-only/pdf/render-audit-logs.ts |
-| 566 | Storage access was denied, so we cannot keep you signed in inside this embed. Please try again. | הגישה לאחסון נחסמה, ולכן לא ניתן לשמור על החיבור שלכם בתוך ההטמעה. נא לנסות שוב. | apps/remix/app/components/embed/embed-popup-auth.tsx |
-| 567 | Successfully created: {successCount} | נוצרו בהצלחה: {successCount} | packages/email/templates/bulk-send-complete.tsx |
-| 568 | Summary: | סיכום: | packages/email/templates/bulk-send-complete.tsx |
-| 569 | System auto inserted fields | שדות שהוזנו אוטומטית על ידי המערכת | [Audit log format] packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts |
-| 570 | System Requirements | דרישות מערכת | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 571 | Team email removed | כתובת הדוא״ל של הצוות הוסרה | packages/email/templates/team-email-removed.tsx |
-| 572 | Team email removed for {teamName} on Documenso | כתובת הדוא״ל של הצוות {teamName} הוסרה | packages/email/templates/team-email-removed.tsx |
-| 573 | Text | טקסט | apps/remix/app/components/general/document-signing/document-signing-text-field.tsx, apps/remix/app/components/general/document-signing/document-signing-text-field.tsx, packages/lib/utils/fields.ts |
-| 574 | Text is required | יש להזין טקסט | apps/remix/app/components/dialogs/sign-field-text-dialog.tsx |
-| 575 | Thank you for completing the signing process. | תודה שהשלמתם את תהליך החתימה. | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
-| 576 | Thank you for letting us know, we have flagged this sender for review. If you have any concerns please feel free to reach out to our &lt;0&gt;support team&lt;/0&gt;. | תודה על הדיווח. סימנו את השולח לבדיקה. בכל שאלה או חשש ניתן לפנות אל &lt;0&gt;צוות התמיכה&lt;/0&gt; שלנו. | apps/remix/app/routes/_recipient+/report.$token.tsx |
-| 577 | Thank you for using Documenso to perform your electronic document signing. The purpose of this disclosure is to inform you about the process, legality, and your rights regarding the use of electronic signatures on our platform. By opting to use an electronic signature, you are agreeing to the terms and conditions outlined below. | תודה שבחרתם בשירות החתימה האלקטרונית שלנו. מטרת הודעה זו היא ליידע אתכם על התהליך, על תוקפו המשפטי ועל זכויותיכם בנוגע לשימוש בחתימות אלקטרוניות בפלטפורמה שלנו. בבחירה בחתימה אלקטרונית, הנכם מסכימים לתנאים המפורטים להלן. | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 578 | That's okay, it happens! Click the button below to reset your password. | זה בסדר, זה קורה! לחצו על הכפתור שלמטה כדי לאפס את הסיסמה. | packages/email/template-components/template-forgot-password.tsx |
-| 579 | The document has been successfully rejected. | המסמך נדחה בהצלחה. | apps/remix/app/components/general/document-signing/document-signing-reject-dialog.tsx |
-| 580 | The document owner has been notified of this rejection. No further action is required from you at this time. The document owner may contact you with any questions regarding this rejection. | בעלי המסמך קיבלו הודעה על הדחייה. אין צורך בפעולה נוספת מצדכם בשלב זה. ייתכן שבעלי המסמך ייצרו איתכם קשר בשאלות בנוגע לדחייה. | packages/email/template-components/template-document-rejection-confirmed.tsx |
-| 581 | The document owner has been notified of your decision. They may contact you with further instructions if necessary. | בעלי המסמך קיבלו הודעה על החלטתכם, וייתכן שייצרו איתכם קשר עם הנחיות נוספות במידת הצורך. | apps/remix/app/components/embed/embed-document-rejected.tsx, apps/remix/app/routes/_recipient+/sign.$token+/rejected.tsx |
-| 582 | The document ownership was delegated to {0} on behalf of {1} | הבעלות על המסמך הועברה אל {0} בשם {1} | [Audit log format] packages/lib/utils/document-audit-logs.ts |
-| 583 | The document was rejected externally by {onBehalfOf} on behalf of {user} | המסמך נדחה באופן חיצוני על ידי {onBehalfOf} בשם {user} | packages/lib/utils/document-audit-logs.ts |
-| 584 | The document was rejected externally by {onBehalfOf} on behalf of the recipient | המסמך נדחה באופן חיצוני על ידי {onBehalfOf} בשם הנמען | packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts |
-| 585 | The document was rejected externally on behalf of {user} | המסמך נדחה באופן חיצוני בשם {user} | packages/lib/utils/document-audit-logs.ts |
-| 586 | The document was rejected externally on behalf of the recipient | המסמך נדחה באופן חיצוני בשם הנמען | packages/lib/utils/document-audit-logs.ts |
-| 587 | The following errors occurred: | אירעו השגיאות הבאות: | packages/email/templates/bulk-send-complete.tsx |
-| 588 | The following organisation has been deleted by an administrator. You and your members will no longer be able to access this organisation, its teams, or its associated data. | הארגון הבא נמחק על ידי מנהל מערכת. לכם ולחברי הארגון לא תהיה עוד גישה לארגון זה, לצוותים שלו או לנתונים הקשורים אליו. | packages/email/templates/organisation-delete.tsx |
-| 589 | The following organisation has been deleted. You and your members will no longer be able to access this organisation, its teams, or its associated data. | הארגון הבא נמחק. לכם ולחברי הארגון לא תהיה עוד גישה לארגון זה, לצוותים שלו או לנתונים הקשורים אליו. | packages/email/templates/organisation-delete.tsx |
-| 590 | The following team has been deleted. You will no longer be able to access this team and its documents | הצוות הבא נמחק. לא תהיה לכם עוד גישה לצוות זה ולמסמכים שלו | packages/email/templates/team-delete.tsx |
-| 591 | The image could not be loaded. Please try again. | לא ניתן היה לטעון את התמונה. נא לנסות שוב. | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 592 | The image must be smaller than 5MB. | גודל התמונה חייב להיות קטן מ-5MB. | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 593 | The page you are looking for was moved, removed, renamed or might never have existed. | הדף שחיפשתם הועבר, הוסר, שונה שמו או שמעולם לא היה קיים. | apps/remix/app/components/general/generic-error-layout.tsx |
-| 594 | The reason provided for deletion is the following: | סיבת המחיקה שצוינה היא: | packages/email/template-components/template-document-super-delete.tsx |
-| 595 | The signing deadline for this document has passed. Please contact the document owner if you need a new copy to sign. | המועד האחרון לחתימה על מסמך זה חלף. אם נדרש עותק חדש לחתימה, נא לפנות לבעלי המסמך. | apps/remix/app/routes/_recipient+/sign.$token+/expired.tsx |
-| 596 | The signing provider did not respond in time. Please retry. | ספק החתימה לא הגיב בזמן. נא לנסות שוב. | apps/remix/app/components/general/document-signing/csc-recipient-signing-in-progress-page.tsx, apps/remix/app/components/general/envelope-signing/envelope-signing-csc-status.tsx |
-| 597 | The signing window for "{recipientName}" on document "{documentName}" has expired. | חלון הזמן לחתימה של "{recipientName}" על המסמך "{documentName}" פג. | packages/email/templates/recipient-expired.tsx |
-| 598 | The signing window for {displayName} on document "{documentName}" has expired. You can resend the document to extend their deadline or cancel the document. | חלון הזמן לחתימה של {displayName} על המסמך "{documentName}" פג. באפשרותכם לשלוח את המסמך מחדש כדי להאריך את המועד, או לבטל את המסמך. | packages/email/template-components/template-recipient-expired.tsx |
-| 599 | The team email &lt;0&gt;{teamEmail}&lt;/0&gt; has been removed from the following team | כתובת הדוא״ל של הצוות &lt;0&gt;{teamEmail}&lt;/0&gt; הוסרה מהצוות הבא | packages/email/templates/team-email-removed.tsx |
-| 600 | There is no action required on your side. If you believe this was a mistake, please contact the document sender. | אין צורך בפעולה מצדכם. אם לדעתכם מדובר בטעות, נא לפנות לשולח המסמך. | packages/email/template-components/template-recipient-removed-by-admin.tsx |
-| 601 | There is no action required on your side. If you believe this was a mistake, please contact your administrator. | אין צורך בפעולה מצדכם. אם לדעתכם מדובר בטעות, נא לפנות למנהל המערכת. | packages/email/template-components/template-recipient-removed-by-admin.tsx |
-| 602 | There was an issue rendering some fields, please review the fields and try again. | אירעה בעיה בהצגת חלק מהשדות. נא לבדוק את השדות ולנסות שוב. | packages/lib/constants/pdf-viewer-i18n.ts |
-| 603 | This direct link template cannot be used because one or more signers do not have a signature field assigned. Please contact the sender to update the template. | לא ניתן להשתמש בתבנית קישור ישיר זו, משום שלאחד החותמים או יותר לא הוקצה שדה חתימה. נא לפנות לשולח לעדכון התבנית. | apps/remix/app/components/general/direct-template/direct-template-invalid-page.tsx |
-| 604 | This document can not be recovered, if you would like to dispute the reason for future documents please contact support. | לא ניתן לשחזר מסמך זה. אם ברצונכם לערער על הסיבה לגבי מסמכים עתידיים, נא לפנות לתמיכה. | packages/email/template-components/template-document-super-delete.tsx |
-| 605 | This document has been cancelled by the owner and is no longer available for others to sign. | מסמך זה בוטל על ידי הבעלים ואינו זמין עוד לחתימה. | apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx |
-| 606 | This document has been cancelled by the owner. | מסמך זה בוטל על ידי הבעלים. | apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx, apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx |
-| 607 | This document is available in your Documenso account. You can view more details, recipients, and audit logs there. | מסמך זה זמין בחשבון שלכם. שם ניתן לצפות בפרטים נוספים, בנמענים וביומני הביקורת. | apps/remix/app/components/general/document/document-certificate-qr-view.tsx |
-| 608 | This document is no longer available to sign because the account that sent it has been disabled, likely due to spam or abuse. | מסמך זה אינו זמין עוד לחתימה, משום שהחשבון ששלח אותו הושבת, ככל הנראה בשל דואר זבל או שימוש לרעה. | apps/remix/app/components/embed/embed-sender-disabled.tsx, apps/remix/app/components/general/document-signing/document-signing-sender-disabled-page.tsx |
-| 609 | This document requires a qualified electronic signature. Sign in with your signing provider to continue. | מסמך זה מחייב חתימה אלקטרונית מאושרת. יש להתחבר באמצעות ספק החתימה כדי להמשיך. | apps/remix/app/components/embed/embed-csc-authentication-required.tsx |
-| 610 | This document was already signed and no further action was taken. | מסמך זה כבר נחתם, ולא בוצעה פעולה נוספת. | apps/remix/app/components/general/envelope-signing/envelope-signing-complete-dialog.tsx |
-| 611 | This document was sent using &lt;0&gt;Documenso&lt;/0&gt;. | מסמך זה נשלח באמצעות &lt;0&gt;VoIPe&lt;/0&gt;. | packages/email/template-components/template-footer.tsx |
-| 612 | This email confirms that you have rejected the document &lt;0&gt;"{documentName}"&lt;/0&gt; sent by {documentOwnerName}. | הודעה זו מאשרת שדחיתם את המסמך &lt;0&gt;"{documentName}"&lt;/0&gt; שנשלח על ידי {documentOwnerName}. | packages/email/template-components/template-document-rejection-confirmed.tsx |
-| 613 | This feature is not available on your current plan | אפשרות זו אינה זמינה בתוכנית הנוכחית שלכם | apps/remix/app/components/embed/embed-paywall.tsx |
-| 614 | This image is invalid, please upload a valid image file. | התמונה אינה תקינה. נא להעלות קובץ תמונה תקין. | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 615 | This signing request is missing its details. Close this window and try again. | חסרים פרטים בבקשת החתימה. נא לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 616 | This window must be opened from a Documenso embed. | יש לפתוח חלון זה מתוך הטמעה של המערכת. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 617 | Time Zone | אזור זמן | apps/remix/app/routes/_internal+/[__htmltopdf]+/audit-log.tsx, packages/lib/server-only/pdf/render-audit-logs.ts |
-| 618 | To approve this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לאשר מסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 619 | To approve this document, you need to be logged in. | כדי לאשר מסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 620 | To approve this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לאשר שדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 621 | To approve this field, you need to be logged in. | כדי לאשר שדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 622 | To assist with this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לסייע במסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 623 | To assist with this document, you need to be logged in. | כדי לסייע במסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 624 | To assist with this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לסייע בשדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 625 | To assist with this field, you need to be logged in. | כדי לסייע בשדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 626 | To get started, please set your password by clicking the button below: | כדי להתחיל, נא להגדיר סיסמה בלחיצה על הכפתור שלמטה: | packages/email/template-components/template-admin-user-created.tsx |
-| 627 | To mark this document as viewed, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לסמן מסמך זה כנצפה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 628 | To mark this document as viewed, you need to be logged in. | כדי לסמן מסמך זה כנצפה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 629 | To sign this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לחתום על מסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 630 | To sign this document, you need to be logged in. | כדי לחתום על מסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 631 | To sign this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לחתום על שדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 632 | To sign this field, you need to be logged in. | כדי לחתום על שדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 633 | To use our electronic signature service, you must have access to: | כדי להשתמש בשירות החתימה האלקטרונית שלנו, נדרשת לכם גישה אל: | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 634 | To view this document you need to be signed into your account, please sign in to continue. | כדי לצפות במסמך זה יש להתחבר לחשבון. נא להתחבר כדי להמשיך. | apps/remix/app/components/embed/embed-authentication-required.tsx |
-| 635 | To view this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לצפות במסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 636 | To view this document, you need to be logged in. | כדי לצפות במסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 637 | To view this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לצפות בשדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 638 | To view this field, you need to be logged in. | כדי לצפות בשדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
-| 639 | Total rows processed: {totalProcessed} | סה״כ שורות שעובדו: {totalProcessed} | packages/email/templates/bulk-send-complete.tsx |
-| 640 | Try again | ניסיון חוזר | apps/remix/app/components/embed/embed-csc-authentication-required.tsx, apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx, apps/remix/app/components/general/envelope-signing/envelope-signing-csc-status.tsx |
-| 641 | Two-Factor Authentication | אימות דו-שלבי | apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, packages/lib/server-only/pdf/generate-certificate-pdf.ts |
-| 642 | Two-Factor Re-Authentication | אימות דו-שלבי חוזר | apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, packages/lib/server-only/pdf/generate-certificate-pdf.ts |
-| 643 | Type | הקלדה | [Type signature] packages/ui/primitives/signature-pad/signature-pad.tsx |
-| 644 | Type your signature | הקלידו את חתימתכם | packages/ui/primitives/signature-pad/signature-pad-type.tsx |
-| 645 | Typed signatures are not allowed. Please draw your signature. | חתימה מוקלדת אינה מותרת. נא לצייר את החתימה. | apps/remix/app/components/general/document-signing/document-signing-signature-field.tsx |
-| 646 | Unable to sign document | לא ניתן לחתום על המסמך | apps/remix/app/components/embed/embed-document-signing-page-v1.tsx, apps/remix/app/components/embed/multisign/multi-sign-document-signing-view.tsx |
-| 647 | Unable to start the signing flow | לא ניתן להתחיל את תהליך החתימה | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
-| 648 | Unable to upload image | לא ניתן להעלות את התמונה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 649 | Unauthorized | אין הרשאה | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-password.tsx |
-| 650 | Undo | ביטול פעולה | packages/ui/primitives/signature-pad/signature-pad-draw.tsx, packages/ui/primitives/signature-pad/signature-pad-draw.tsx |
-| 651 | Unknown | לא ידוע | apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx (+6) |
-| 652 | Unknown sign in provider. | ספק התחברות לא מוכר. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 653 | Updating Your Information | עדכון הפרטים שלכם | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 654 | Upload | העלאה | [Upload signature] packages/ui/primitives/signature-pad/signature-pad.tsx |
-| 655 | Upload New Image | העלאת תמונה חדשה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 656 | Upload Signature | העלאת חתימה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 657 | Use your authenticator app to generate a code | יש להשתמש באפליקציית האימות כדי להפיק קוד | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
-| 658 | Use your passkey for authentication | אימות באמצעות מפתח הגישה שלכם | apps/remix/app/components/general/document-signing/document-signing-auth-dialog.tsx |
-| 659 | User | משתמש | packages/lib/server-only/pdf/render-audit-logs.ts |
-| 660 | User Agent | סוכן משתמש (User Agent) | packages/lib/server-only/pdf/render-audit-logs.ts |
-| 661 | Validation failed | האימות נכשל | apps/remix/app/components/dialogs/sign-field-checkbox-dialog.tsx |
-| 662 | Verification Code Required | נדרש קוד אימות | packages/email/template-components/template-access-auth-2fa.tsx |
-| 663 | Verify & Complete | אימות והשלמה | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
-| 664 | Verify your email, then close this window and try again. | יש לאמת את כתובת הדוא״ל, ואז לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 665 | Verify your team email address | אימות כתובת הדוא״ל של הצוות | packages/email/templates/confirm-team-email.tsx |
-| 666 | View | צפייה | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
-| 667 | View | לצפות במסמך | [Recipient role action verb] packages/lib/constants/recipient-roles.ts |
-| 668 | View all documents sent to and from this email address | צפייה בכל המסמכים שנשלחו אל כתובת דוא״ל זו וממנה | packages/email/templates/confirm-team-email.tsx |
-| 669 | View document | צפייה במסמך | packages/email/templates/document-created-from-direct-template.tsx |
-| 670 | View Document | צפייה במסמך | apps/remix/app/components/general/document-signing/document-signing-mobile-widget.tsx, apps/remix/app/components/general/document-signing/document-signing-page-view-v1.tsx, apps/remix/app/components/general/document-signing/document-signing-page-view-v2.tsx (+4) |
-| 671 | View Document to approve | צפייה במסמך לאישור | packages/email/template-components/template-document-invite.tsx |
-| 672 | View Document to assist | צפייה במסמך לסיוע | packages/email/template-components/template-document-invite.tsx |
-| 673 | View Document to sign | צפייה במסמך לחתימה | packages/email/template-components/template-document-invite.tsx |
-| 674 | View next document | צפייה במסמך הבא | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
-| 675 | View plans | צפייה בתוכניות | packages/email/template-components/template-document-self-signed.tsx |
-| 676 | Viewed | נצפה | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx, apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, packages/lib/server-only/pdf/render-certificate.ts |
-| 677 | Viewed | צפה/תה במסמך | [Recipient role actioned] packages/lib/constants/recipient-roles.ts |
-| 678 | Viewer | צופה | apps/remix/app/components/general/envelope-signing/envelope-signer-header.tsx |
-| 679 | Viewer | צופה | [Recipient role name] packages/lib/constants/recipient-roles.ts |
-| 680 | Viewers | צופים | [Recipient role plural name] packages/lib/constants/recipient-roles.ts |
-| 681 | Viewing | צופה | [Recipient role progressive verb] packages/lib/constants/recipient-roles.ts |
-| 682 | Waiting for others | ממתינים לאחרים | packages/email/template-components/template-document-pending.tsx |
-| 683 | Waiting for others to complete signing | ממתינים להשלמת החתימה על ידי האחרים | packages/lib/jobs/definitions/emails/send-document-pending-email.handler.ts |
-| 684 | Waiting for others to sign | ממתינים לחתימת האחרים | apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx |
-| 685 | Waiting for Your Turn | ממתינים לתורכם | apps/remix/app/components/embed/embed-document-waiting-for-turn.tsx, apps/remix/app/routes/_recipient+/sign.$token+/waiting.tsx |
-| 686 | Want to send slick signing links like this one? &lt;0&gt;Check out Documenso&lt;/0&gt;. | רוצים לשלוח קישורי חתימה כמו זה? &lt;0&gt;למידע נוסף&lt;/0&gt;. | apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx, apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx |
-| 687 | Warning: This was sent from a new account ({senderEmail}) | אזהרה: הודעה זו נשלחה מחשבון חדש ({senderEmail}) | packages/email/template-components/template-new-account-warning.tsx |
-| 688 | We encountered an unknown error while attempting to request the two-factor authentication code. Please try again later. | אירעה שגיאה לא ידועה בבקשת קוד האימות הדו-שלבי. נא לנסות שוב מאוחר יותר. | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx, apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
-| 689 | We were unable to log you out at this time. | לא ניתן היה לנתק אתכם כעת. | apps/remix/app/components/general/direct-template/direct-template-signing-auth-page.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-page.tsx |
-| 690 | We were unable to report this sender at this time. Please try again later. | לא ניתן היה לדווח על שולח זה כעת. נא לנסות שוב מאוחר יותר. | apps/remix/app/routes/_recipient+/report.$token.tsx |
-| 691 | We were unable to start the sign in flow. Close this window and try again. | לא ניתן היה להתחיל את תהליך ההתחברות. נא לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 692 | We were unable to verify your details. Please try again or contact support | לא ניתן היה לאמת את הפרטים שלכם. נא לנסות שוב או לפנות לתמיכה | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-password.tsx |
-| 693 | We'll send a 6-digit code to your email | קוד בן 6 ספרות יישלח לכתובת הדוא״ל שלכם | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
-| 694 | We're still waiting for other signers to sign this document.&lt;0/&gt;We'll notify you as soon as it's ready. | אנו עדיין ממתינים לחתימת שאר החותמים על מסמך זה.&lt;0/&gt;נעדכן אתכם ברגע שהמסמך יהיה מוכן. | packages/email/template-components/template-document-pending.tsx |
-| 695 | We've changed your password as you asked. You can now sign in with your new password. | שינינו את הסיסמה כפי שביקשתם. כעת ניתן להתחבר עם הסיסמה החדשה. | packages/email/templates/reset-password.tsx |
-| 696 | We've noticed API activity on your account that exceeds the fair use limits of your current plan. As a precaution, new API activity has been temporarily paused pending review. | זיהינו בחשבון שלכם פעילות API החורגת ממגבלות השימוש ההוגן של התוכנית הנוכחית. כאמצעי זהירות, פעילות API חדשה הושהתה זמנית עד לבדיקה. | packages/email/templates/organisation-limit-alert.tsx |
-| 697 | We've noticed document activity on your account that exceeds the fair use limits of your current plan. As a precaution, new document activity has been temporarily paused pending review. | זיהינו בחשבון שלכם פעילות מסמכים החורגת ממגבלות השימוש ההוגן של התוכנית הנוכחית. כאמצעי זהירות, פעילות מסמכים חדשה הושהתה זמנית עד לבדיקה. | packages/email/templates/organisation-limit-alert.tsx |
-| 698 | We've noticed email sending activity on your account that exceeds the fair use limits of your current plan. As a precaution, new email activity has been temporarily paused pending review. | זיהינו בחשבון שלכם פעילות שליחת דוא״ל החורגת ממגבלות השימוש ההוגן של התוכנית הנוכחית. כאמצעי זהירות, שליחת דוא״ל חדשה הושהתה זמנית עד לבדיקה. | packages/email/templates/organisation-limit-alert.tsx |
-| 699 | We've sent a 6-digit verification code to your email. Please enter it below to complete the document. | שלחנו קוד אימות בן 6 ספרות לכתובת הדוא״ל שלכם. נא להזין אותו למטה כדי להשלים את המסמך. | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
-| 700 | We've updated the usage limits for your organisation. | עדכנו את מגבלות השימוש של הארגון שלכם. | packages/email/templates/organisation-limits-updated.tsx |
-| 701 | Welcome | ברוכים הבאים | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 702 | Welcome to Documenso | ברוכים הבאים | packages/lib/jobs/definitions/emails/send-admin-user-created-email.handler.ts |
-| 703 | Welcome to Documenso! | ברוכים הבאים! | packages/email/template-components/template-admin-user-created.tsx, packages/email/template-components/template-confirmation-email.tsx |
-| 704 | Were you trying to edit this document instead? | האם התכוונתם לערוך את המסמך? | apps/remix/app/routes/_recipient+/sign.$token+/waiting.tsx |
-| 705 | When you sign a document, we can automatically fill in and sign the following fields using information that has already been provided. You can also manually sign or remove any automatically signed fields afterwards if you desire. | בעת החתימה על מסמך, נוכל למלא ולחתום באופן אוטומטי על השדות הבאים באמצעות מידע שכבר נמסר. לאחר מכן תוכלו, אם תרצו, לחתום ידנית על שדות שנחתמו אוטומטית או להסיר אותם. | apps/remix/app/components/general/document-signing/document-signing-auto-sign.tsx |
-| 706 | When you use our platform to affix your electronic signature to documents, you are consenting to do so under the Electronic Signatures in Global and National Commerce Act (E-Sign Act) and other applicable laws. This action indicates your agreement to use electronic means to sign documents and receive notifications. | בשימוש בפלטפורמה שלנו להוספת החתימה האלקטרונית שלכם למסמכים, הנכם מסכימים לעשות זאת בהתאם לחוק החתימות האלקטרוניות בסחר העולמי והלאומי (E-Sign Act) ולדינים החלים האחרים. פעולה זו מעידה על הסכמתכם להשתמש באמצעים אלקטרוניים לחתימה על מסמכים ולקבלת הודעות. | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 707 | Withdrawing Consent | ביטול ההסכמה | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 708 | You | אתם | packages/lib/utils/document-audit-logs.ts |
-| 709 | You added a field | הוספתם שדה | packages/lib/utils/document-audit-logs.ts |
-| 710 | You added a recipient | הוספתם נמען | packages/lib/utils/document-audit-logs.ts |
-| 711 | You approved the document | אישרתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 712 | You are about to complete approving the following document | אתם עומדים להשלים את אישור המסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
-| 713 | You are about to complete assisting the following document | אתם עומדים להשלים את הסיוע במסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
-| 714 | You are about to complete signing the following document | אתם עומדים להשלים את החתימה על המסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
-| 715 | You are about to complete viewing the following document | אתם עומדים להשלים את הצפייה במסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
-| 716 | You are currently signed in as &lt;0&gt;{signedInAs}&lt;/0&gt;. Signing in below will switch accounts. | אתם מחוברים כעת בתור &lt;0&gt;{signedInAs}&lt;/0&gt;. התחברות למטה תחליף את החשבון. | apps/remix/app/components/embed/embed-popup-auth.tsx |
-| 717 | You authenticated with the signing provider | ביצעתם אימות מול ספק החתימה | packages/lib/utils/document-audit-logs.ts |
-| 718 | You authorised the remote signature | אישרתם את החתימה המרוחקת | packages/lib/utils/document-audit-logs.ts |
-| 719 | You can also copy and paste this link into your browser: {confirmationLink} (link expires in 1 hour) | ניתן גם להעתיק את הקישור הבא ולהדביק אותו בדפדפן: {confirmationLink} (תוקף הקישור יפוג בעוד שעה) | packages/email/template-components/template-confirmation-email.tsx |
-| 720 | You can also copy and paste this link into your browser: {resetPasswordLink} (link expires in 24 hours) | ניתן גם להעתיק את הקישור הבא ולהדביק אותו בדפדפן: {resetPasswordLink} (תוקף הקישור יפוג בעוד 24 שעות) | packages/email/template-components/template-admin-user-created.tsx |
-| 721 | You can close this window. | ניתן לסגור חלון זה. | apps/remix/app/routes/embed+/auth+/complete.tsx |
-| 722 | You can revoke access at any time in your team settings on Documenso &lt;0&gt;here&lt;/0&gt;. | ניתן לבטל את הגישה בכל עת בהגדרות הצוות &lt;0&gt;כאן&lt;/0&gt;. | packages/email/templates/confirm-team-email.tsx |
-| 723 | You can view the created documents in your dashboard under the "Documents created from template" section. | ניתן לצפות במסמכים שנוצרו בלוח הבקרה, בקטע "מסמכים שנוצרו מתבנית". | packages/email/templates/bulk-send-complete.tsx |
-| 724 | You can view the document and its status by clicking the button below. | ניתן לצפות במסמך ובסטטוס שלו בלחיצה על הכפתור שלמטה. | packages/email/template-components/template-document-rejected.tsx |
-| 725 | You cancelled the document | ביטלתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 726 | You CC'd the document | קיבלתם עותק של המסמך | packages/lib/utils/document-audit-logs.ts |
-| 727 | You completed your task | השלמתם את המשימה שלכם | packages/lib/utils/document-audit-logs.ts |
-| 728 | You created an envelope item with title {0} | יצרתם פריט מעטפה בשם {0} | packages/lib/utils/document-audit-logs.ts |
-| 729 | You created the document | יצרתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 730 | You deleted an envelope item with title {0} | מחקתם פריט מעטפה בשם {0} | packages/lib/utils/document-audit-logs.ts |
-| 731 | You deleted the document | מחקתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 732 | You don't need to sign it anymore. | אין עוד צורך לחתום עליו. | packages/email/template-components/template-document-cancel.tsx |
-| 733 | You failed to validate a 2FA token for the document | אימות קוד ה-2FA שלכם למסמך נכשל | packages/lib/utils/document-audit-logs.ts |
-| 734 | You have been invited to join the following organisation | הוזמנתם להצטרף לארגון הבא | packages/email/templates/organisation-invite.tsx |
-| 735 | You have been removed from a document | הוסרתם ממסמך | packages/email/template-components/template-recipient-removed-by-admin.tsx, packages/lib/jobs/definitions/emails/send-admin-recipient-removed-emails.handler.ts, packages/lib/jobs/definitions/emails/send-recipient-removed-email.handler.ts |
-| 736 | You have been removed from the document "{documentName}" by an administrator, typically at the request of the document sender. | הוסרתם מהמסמך "{documentName}" על ידי מנהל מערכת, בדרך כלל לבקשת שולח המסמך. | packages/email/template-components/template-recipient-removed-by-admin.tsx |
-| 737 | You have been removed from the document "{documentName}" by an administrator. | הוסרתם מהמסמך "{documentName}" על ידי מנהל מערכת. | packages/email/templates/recipient-removed-by-admin.tsx |
-| 738 | You have been requested to sign the following documents. Review each document carefully and complete the signing process. | התבקשתם לחתום על המסמכים הבאים. נא לעיין בכל מסמך בקפידה ולהשלים את תהליך החתימה. | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
-| 739 | You have initiated the document {0} that requires you to {recipientActionVerb} it. | יזמתם את המסמך {0}, ויש {recipientActionVerb}. | packages/lib/jobs/definitions/emails/send-signing-email.handler.ts, packages/lib/server-only/document/resend-document.ts |
-| 740 | You have rejected the document '{documentName}' | דחיתם את המסמך '{documentName}' | packages/email/templates/document-rejection-confirmed.tsx |
-| 741 | You have rejected this document | דחיתם מסמך זה | apps/remix/app/components/embed/embed-document-rejected.tsx, apps/remix/app/routes/_recipient+/sign.$token+/rejected.tsx |
-| 742 | You have signed “{documentName}” | חתמתם על „{documentName}” | packages/email/template-components/template-document-self-signed.tsx |
-| 743 | You have the right to withdraw your consent to use electronic signatures at any time before completing the signing process. To withdraw your consent, please contact the sender of the document. In failing to contact the sender you may reach out to &lt;0&gt;{SUPPORT_EMAIL}&lt;/0&gt; for assistance. Be aware that withdrawing consent may delay or halt the completion of the related transaction or service. | באפשרותכם לבטל את הסכמתכם לשימוש בחתימות אלקטרוניות בכל עת לפני השלמת תהליך החתימה. לביטול ההסכמה, נא לפנות לשולח המסמך. אם לא ניתן ליצור קשר עם השולח, ניתן לפנות לקבלת סיוע אל &lt;0&gt;{SUPPORT_EMAIL}&lt;/0&gt;. לתשומת לבכם, ביטול ההסכמה עלול לעכב או לעצור את השלמת העסקה או השירות הקשורים. | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
-| 744 | You moved the document to team | העברתם את המסמך לצוות | packages/lib/utils/document-audit-logs.ts |
-| 745 | You need to be logged in as &lt;0&gt;{email}&lt;/0&gt; to view this page. | כדי לצפות בדף זה יש להתחבר בתור &lt;0&gt;{email}&lt;/0&gt;. | apps/remix/app/components/general/document-signing/document-signing-auth-page.tsx |
-| 746 | You need to be logged in to view this page. | כדי לצפות בדף זה יש להתחבר. | apps/remix/app/components/general/direct-template/direct-template-signing-auth-page.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-page.tsx |
-| 747 | You need to setup 2FA to approve this document. | כדי לאשר מסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 748 | You need to setup 2FA to approve this field. | כדי לאשר שדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 749 | You need to setup 2FA to assist with this document. | כדי לסייע במסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 750 | You need to setup 2FA to assist with this field. | כדי לסייע בשדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 751 | You need to setup 2FA to mark this document as viewed. | כדי לסמן מסמך זה כנצפה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 752 | You need to setup 2FA to sign this document. | כדי לחתום על מסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 753 | You need to setup 2FA to sign this field. | כדי לחתום על שדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 754 | You need to setup 2FA to view this document. | כדי לצפות במסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 755 | You need to setup 2FA to view this field. | כדי לצפות בשדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
-| 756 | You need to setup a passkey to approve this document. | כדי לאשר מסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 757 | You need to setup a passkey to approve this field. | כדי לאשר שדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 758 | You need to setup a passkey to assist with this document. | כדי לסייע במסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 759 | You need to setup a passkey to assist with this field. | כדי לסייע בשדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 760 | You need to setup a passkey to mark this document as viewed. | כדי לסמן מסמך זה כנצפה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 761 | You need to setup a passkey to sign this document. | כדי לחתום על מסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 762 | You need to setup a passkey to sign this field. | כדי לחתום על שדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 763 | You need to setup a passkey to view this document. | כדי לצפות במסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 764 | You need to setup a passkey to view this field. | כדי לצפות בשדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 765 | You opened the document | פתחתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 766 | You prefilled a field | מילאתם שדה מראש | packages/lib/utils/document-audit-logs.ts |
-| 767 | You rejected the document | דחיתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 768 | You removed a field | הסרתם שדה | packages/lib/utils/document-audit-logs.ts |
-| 769 | You removed a recipient | הסרתם נמען | packages/lib/utils/document-audit-logs.ts |
-| 770 | You removed a recipient as an administrator | הסרתם נמען בהרשאת מנהל מערכת | packages/lib/utils/document-audit-logs.ts |
-| 771 | You replaced the PDF for envelope item {0} | החלפתם את קובץ ה-PDF של פריט המעטפה {0} | packages/lib/utils/document-audit-logs.ts |
-| 772 | You requested a 2FA token for the document | ביקשתם קוד 2FA למסמך | packages/lib/utils/document-audit-logs.ts |
-| 773 | You requested a remote signature | ביקשתם חתימה מרוחקת | packages/lib/utils/document-audit-logs.ts |
-| 774 | You resent an email to {0} | שלחתם שוב דוא״ל אל {0} | packages/lib/utils/document-audit-logs.ts |
-| 775 | You sent an email to {0} | שלחתם דוא״ל אל {0} | packages/lib/utils/document-audit-logs.ts |
-| 776 | You sent the document | שלחתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 777 | You signed a field | חתמתם על שדה | packages/lib/utils/document-audit-logs.ts |
-| 778 | You signed the document | חתמתם על המסמך | packages/lib/utils/document-audit-logs.ts |
-| 779 | You unsigned a field | ביטלתם חתימה על שדה | packages/lib/utils/document-audit-logs.ts |
-| 780 | You updated a field | עדכנתם שדה | packages/lib/utils/document-audit-logs.ts |
-| 781 | You updated a recipient | עדכנתם נמען | packages/lib/utils/document-audit-logs.ts |
-| 782 | You updated an envelope item | עדכנתם פריט מעטפה | packages/lib/utils/document-audit-logs.ts |
-| 783 | You updated the document | עדכנתם את המסמך | packages/lib/utils/document-audit-logs.ts |
-| 784 | You updated the document access auth requirements | עדכנתם את דרישות האימות לגישה למסמך | packages/lib/utils/document-audit-logs.ts |
-| 785 | You updated the document external ID | עדכנתם את המזהה החיצוני של המסמך | packages/lib/utils/document-audit-logs.ts |
-| 786 | You updated the document signing auth requirements | עדכנתם את דרישות האימות לחתימה על המסמך | packages/lib/utils/document-audit-logs.ts |
-| 787 | You updated the document title | עדכנתם את כותרת המסמך | packages/lib/utils/document-audit-logs.ts |
-| 788 | You updated the document visibility | עדכנתם את נראות המסמך | packages/lib/utils/document-audit-logs.ts |
-| 789 | You validated a 2FA token for the document | אימתתם קוד 2FA למסמך | packages/lib/utils/document-audit-logs.ts |
-| 790 | You viewed the document | צפיתם במסמך | packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts |
-| 791 | You will be redirected to sign in, then returned here. | תועברו להתחברות, ולאחר מכן תוחזרו לכאן. | apps/remix/app/routes/embed+/auth+/popup.tsx |
-| 792 | You will receive an email copy of the signed document once everyone has signed. | עותק של המסמך החתום יישלח אליכם בדוא״ל לאחר שכל הנמענים יחתמו. | apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx |
-| 793 | You won't be able to sign in or send documents while it is disabled. | כל עוד החשבון מושבת, לא ניתן להתחבר או לשלוח מסמכים. | packages/email/template-components/template-account-disabled.tsx |
-| 794 | Your account does not have a password and password sign in is disabled for this instance. Please contact the document sender to use a different authentication method. | לחשבון שלכם לא הוגדרה סיסמה, וההתחברות באמצעות סיסמה מושבתת במערכת זו. נא לפנות לשולח המסמך כדי להשתמש בשיטת אימות אחרת. | apps/remix/app/components/general/document-signing/document-signing-auth-set-password.tsx |
-| 795 | Your account has been disabled | החשבון שלכם הושבת | packages/email/template-components/template-account-disabled.tsx |
-| 796 | Your browser blocked the sign in window. Allow popups for this site and try again. | הדפדפן חסם את חלון ההתחברות. יש לאפשר חלונות קופצים לאתר זה ולנסות שוב. | apps/remix/app/components/embed/embed-popup-auth.tsx |
-| 797 | Your browser does not support passkeys, which is required to approve this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לאישור מסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 798 | Your browser does not support passkeys, which is required to approve this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לאישור שדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 799 | Your browser does not support passkeys, which is required to assist with this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לסיוע במסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 800 | Your browser does not support passkeys, which is required to assist with this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לסיוע בשדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 801 | Your browser does not support passkeys, which is required to mark this document as viewed. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לסימון מסמך זה כנצפה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 802 | Your browser does not support passkeys, which is required to sign this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לחתימה על מסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 803 | Your browser does not support passkeys, which is required to sign this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לחתימה על שדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 804 | Your browser does not support passkeys, which is required to view this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לצפייה במסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 805 | Your browser does not support passkeys, which is required to view this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לצפייה בשדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
-| 806 | Your browser is blocking the cookies needed to keep you signed in inside this embed. Open this document in a new tab instead. | הדפדפן שלכם חוסם את קובצי ה-Cookie הנדרשים כדי לשמור על החיבור בתוך ההטמעה. נא לפתוח מסמך זה בלשונית חדשה. | apps/remix/app/components/embed/embed-popup-auth.tsx |
-| 807 | Your browser needs permission to keep you signed in inside this embed. Press Continue and allow access when Safari asks. | הדפדפן זקוק להרשאה כדי לשמור על החיבור שלכם בתוך ההטמעה. לחצו על "המשך" ואשרו את הגישה כש-Safari יבקש זאת. | apps/remix/app/components/embed/embed-popup-auth.tsx |
-| 808 | Your bulk send operation for template "{templateName}" has completed. | השליחה המרובה עבור התבנית "{templateName}" הושלמה. | packages/email/templates/bulk-send-complete.tsx |
-| 809 | Your Documenso account has been disabled | החשבון שלכם הושבת | packages/email/templates/account-disabled.tsx, packages/lib/jobs/definitions/emails/send-account-disabled-email.handler.ts |
-| 810 | Your document has been deleted by an admin! | המסמך שלכם נמחק על ידי מנהל מערכת! | packages/email/template-components/template-document-super-delete.tsx |
-| 811 | Your Email | כתובת הדוא״ל שלכם | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
-| 812 | Your Name | השם שלכם | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
-| 813 | Your organisation has been deleted | הארגון שלכם נמחק | packages/email/templates/organisation-delete.tsx, packages/email/templates/organisation-delete.tsx |
-| 814 | Your organisation is generating API requests faster than normal, so some requests are being temporarily throttled. | הארגון שלכם מבצע בקשות API בקצב גבוה מהרגיל, ולכן חלק מהבקשות מוגבלות זמנית. | packages/email/templates/organisation-limit-alert.tsx |
-| 815 | Your organisation is generating documents faster than normal, so some requests are being temporarily throttled. | הארגון שלכם יוצר מסמכים בקצב גבוה מהרגיל, ולכן חלק מהבקשות מוגבלות זמנית. | packages/email/templates/organisation-limit-alert.tsx |
-| 816 | Your organisation is generating emails faster than normal, so some requests are being temporarily throttled. | הארגון שלכם שולח הודעות דוא״ל בקצב גבוה מהרגיל, ולכן חלק מהבקשות מוגבלות זמנית. | packages/email/templates/organisation-limit-alert.tsx |
-| 817 | Your organisation is nearing its fair use limits for creating documents on your current plan. Once the limit is reached, new document activity will be temporarily paused. | הארגון שלכם מתקרב למגבלות השימוש ההוגן ליצירת מסמכים בתוכנית הנוכחית. עם ההגעה למגבלה, פעילות מסמכים חדשה תושהה זמנית. | packages/email/templates/organisation-limit-alert.tsx |
-| 818 | Your organisation is nearing its fair use limits for making API requests on your current plan. Once the limit is reached, new API activity will be temporarily paused. | הארגון שלכם מתקרב למגבלות השימוש ההוגן לבקשות API בתוכנית הנוכחית. עם ההגעה למגבלה, פעילות API חדשה תושהה זמנית. | packages/email/templates/organisation-limit-alert.tsx |
-| 819 | Your organisation is nearing its fair use limits for sending email on your current plan. Once the limit is reached, new email activity will be temporarily paused. | הארגון שלכם מתקרב למגבלות השימוש ההוגן לשליחת דוא״ל בתוכנית הנוכחית. עם ההגעה למגבלה, שליחת דוא״ל חדשה תושהה זמנית. | packages/email/templates/organisation-limit-alert.tsx |
-| 820 | Your organisation limits have been updated | מגבלות הארגון שלכם עודכנו | packages/email/templates/organisation-limits-updated.tsx |
-| 821 | Your password has been updated. | הסיסמה שלכם עודכנה. | packages/email/template-components/template-reset-password.tsx |
-| 822 | Your password was changed | הסיסמה שלכם שונתה | packages/email/templates/reset-password.tsx |
-| 823 | Your password was just changed from your account security settings. | הסיסמה שלכם שונתה זה עתה דרך הגדרות האבטחה של החשבון. | packages/email/templates/reset-password.tsx |
-| 824 | Your remote signature was applied | החתימה המרוחקת שלכם הוחלה | packages/lib/utils/document-audit-logs.ts |
-| 825 | Your signing authorisation expired before the signature could be applied. Please reauthorise to retry. | תוקף הרשאת החתימה שלכם פג לפני שניתן היה להחיל את החתימה. נא לאשר מחדש כדי לנסות שוב. | apps/remix/app/components/general/document-signing/csc-recipient-signing-in-progress-page.tsx, apps/remix/app/components/general/envelope-signing/envelope-signing-csc-status.tsx |
-| 826 | Your signing certificate is invalid, expired, or missing a required key. Contact your administrator or signing provider for assistance. | תעודת החתימה שלכם אינה תקינה, פג תוקפה או שחסר בה מפתח נדרש. לסיוע, נא לפנות למנהל המערכת או לספק החתימה. | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
-| 827 | Your signing provider authentication failed | האימות שלכם מול ספק החתימה נכשל | packages/lib/utils/document-audit-logs.ts |
-| 828 | Your signing provider does not advertise a signing algorithm this document accepts. Contact your administrator or signing provider for assistance. | ספק החתימה שלכם אינו מציע אלגוריתם חתימה שמסמך זה מקבל. לסיוע, נא לפנות למנהל המערכת או לספק החתימה. | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
-| 829 | Your signing provider returned no usable credentials for this account. Contact your administrator or signing provider for assistance. | ספק החתימה שלכם לא החזיר אמצעי חתימה שמישים עבור חשבון זה. לסיוע, נא לפנות למנהל המערכת או לספק החתימה. | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
-| 830 | Your signing window for this document has expired. Please contact the sender for a new invitation. | חלון הזמן לחתימתכם על מסמך זה פג. נא לפנות לשולח לקבלת הזמנה חדשה. | apps/remix/app/components/embed/embed-recipient-expired.tsx |
-| 831 | Your two-factor authentication code | קוד האימות הדו-שלבי שלכם | packages/lib/server-only/2fa/email/send-2fa-token-email.ts |
-| 832 | Your verification code is {code} | קוד האימות שלכם הוא {code} | packages/email/templates/access-auth-2fa.tsx |
-| 833 | Your verification code: | קוד האימות שלכם: | packages/email/template-components/template-access-auth-2fa.tsx |
-| 834 | Zoom in | הגדלה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx, packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
-| 835 | Zoom out | הקטנה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx, packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 564 | Source code | קוד מקור | apps/remix/app/components/general/source-code-footer.tsx |
+| 565 | Starting sign in... | ההתחברות מתחילה... | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 566 | Status | סטטוס | apps/remix/app/routes/_internal+/[__htmltopdf]+/audit-log.tsx, packages/lib/server-only/pdf/render-audit-logs.ts |
+| 567 | Storage access was denied, so we cannot keep you signed in inside this embed. Please try again. | הגישה לאחסון נחסמה, ולכן לא ניתן לשמור על החיבור שלכם בתוך ההטמעה. נא לנסות שוב. | apps/remix/app/components/embed/embed-popup-auth.tsx |
+| 568 | Successfully created: {successCount} | נוצרו בהצלחה: {successCount} | packages/email/templates/bulk-send-complete.tsx |
+| 569 | Summary: | סיכום: | packages/email/templates/bulk-send-complete.tsx |
+| 570 | System auto inserted fields | שדות שהוזנו אוטומטית על ידי המערכת | [Audit log format] packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts |
+| 571 | System Requirements | דרישות מערכת | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 572 | Team email removed | כתובת הדוא״ל של הצוות הוסרה | packages/email/templates/team-email-removed.tsx |
+| 573 | Team email removed for {teamName} on Documenso | כתובת הדוא״ל של הצוות {teamName} הוסרה | packages/email/templates/team-email-removed.tsx |
+| 574 | Text | טקסט | apps/remix/app/components/general/document-signing/document-signing-text-field.tsx, apps/remix/app/components/general/document-signing/document-signing-text-field.tsx, packages/lib/utils/fields.ts |
+| 575 | Text is required | יש להזין טקסט | apps/remix/app/components/dialogs/sign-field-text-dialog.tsx |
+| 576 | Thank you for completing the signing process. | תודה שהשלמתם את תהליך החתימה. | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
+| 577 | Thank you for letting us know, we have flagged this sender for review. If you have any concerns please feel free to reach out to our &lt;0&gt;support team&lt;/0&gt;. | תודה על הדיווח. סימנו את השולח לבדיקה. בכל שאלה או חשש ניתן לפנות אל &lt;0&gt;צוות התמיכה&lt;/0&gt; שלנו. | apps/remix/app/routes/_recipient+/report.$token.tsx |
+| 578 | Thank you for using Documenso to perform your electronic document signing. The purpose of this disclosure is to inform you about the process, legality, and your rights regarding the use of electronic signatures on our platform. By opting to use an electronic signature, you are agreeing to the terms and conditions outlined below. | תודה שבחרתם בשירות החתימה האלקטרונית שלנו. מטרת הודעה זו היא ליידע אתכם על התהליך, על תוקפו המשפטי ועל זכויותיכם בנוגע לשימוש בחתימות אלקטרוניות בפלטפורמה שלנו. בבחירה בחתימה אלקטרונית, הנכם מסכימים לתנאים המפורטים להלן. | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 579 | That's okay, it happens! Click the button below to reset your password. | זה בסדר, זה קורה! לחצו על הכפתור שלמטה כדי לאפס את הסיסמה. | packages/email/template-components/template-forgot-password.tsx |
+| 580 | The document has been successfully rejected. | המסמך נדחה בהצלחה. | apps/remix/app/components/general/document-signing/document-signing-reject-dialog.tsx |
+| 581 | The document owner has been notified of this rejection. No further action is required from you at this time. The document owner may contact you with any questions regarding this rejection. | בעלי המסמך קיבלו הודעה על הדחייה. אין צורך בפעולה נוספת מצדכם בשלב זה. ייתכן שבעלי המסמך ייצרו איתכם קשר בשאלות בנוגע לדחייה. | packages/email/template-components/template-document-rejection-confirmed.tsx |
+| 582 | The document owner has been notified of your decision. They may contact you with further instructions if necessary. | בעלי המסמך קיבלו הודעה על החלטתכם, וייתכן שייצרו איתכם קשר עם הנחיות נוספות במידת הצורך. | apps/remix/app/components/embed/embed-document-rejected.tsx, apps/remix/app/routes/_recipient+/sign.$token+/rejected.tsx |
+| 583 | The document ownership was delegated to {0} on behalf of {1} | הבעלות על המסמך הועברה אל {0} בשם {1} | [Audit log format] packages/lib/utils/document-audit-logs.ts |
+| 584 | The document was rejected externally by {onBehalfOf} on behalf of {user} | המסמך נדחה באופן חיצוני על ידי {onBehalfOf} בשם {user} | packages/lib/utils/document-audit-logs.ts |
+| 585 | The document was rejected externally by {onBehalfOf} on behalf of the recipient | המסמך נדחה באופן חיצוני על ידי {onBehalfOf} בשם הנמען | packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts |
+| 586 | The document was rejected externally on behalf of {user} | המסמך נדחה באופן חיצוני בשם {user} | packages/lib/utils/document-audit-logs.ts |
+| 587 | The document was rejected externally on behalf of the recipient | המסמך נדחה באופן חיצוני בשם הנמען | packages/lib/utils/document-audit-logs.ts |
+| 588 | The following errors occurred: | אירעו השגיאות הבאות: | packages/email/templates/bulk-send-complete.tsx |
+| 589 | The following organisation has been deleted by an administrator. You and your members will no longer be able to access this organisation, its teams, or its associated data. | הארגון הבא נמחק על ידי מנהל מערכת. לכם ולחברי הארגון לא תהיה עוד גישה לארגון זה, לצוותים שלו או לנתונים הקשורים אליו. | packages/email/templates/organisation-delete.tsx |
+| 590 | The following organisation has been deleted. You and your members will no longer be able to access this organisation, its teams, or its associated data. | הארגון הבא נמחק. לכם ולחברי הארגון לא תהיה עוד גישה לארגון זה, לצוותים שלו או לנתונים הקשורים אליו. | packages/email/templates/organisation-delete.tsx |
+| 591 | The following team has been deleted. You will no longer be able to access this team and its documents | הצוות הבא נמחק. לא תהיה לכם עוד גישה לצוות זה ולמסמכים שלו | packages/email/templates/team-delete.tsx |
+| 592 | The image could not be loaded. Please try again. | לא ניתן היה לטעון את התמונה. נא לנסות שוב. | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 593 | The image must be smaller than 5MB. | גודל התמונה חייב להיות קטן מ-5MB. | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 594 | The page you are looking for was moved, removed, renamed or might never have existed. | הדף שחיפשתם הועבר, הוסר, שונה שמו או שמעולם לא היה קיים. | apps/remix/app/components/general/generic-error-layout.tsx |
+| 595 | The reason provided for deletion is the following: | סיבת המחיקה שצוינה היא: | packages/email/template-components/template-document-super-delete.tsx |
+| 596 | The signing deadline for this document has passed. Please contact the document owner if you need a new copy to sign. | המועד האחרון לחתימה על מסמך זה חלף. אם נדרש עותק חדש לחתימה, נא לפנות לבעלי המסמך. | apps/remix/app/routes/_recipient+/sign.$token+/expired.tsx |
+| 597 | The signing provider did not respond in time. Please retry. | ספק החתימה לא הגיב בזמן. נא לנסות שוב. | apps/remix/app/components/general/document-signing/csc-recipient-signing-in-progress-page.tsx, apps/remix/app/components/general/envelope-signing/envelope-signing-csc-status.tsx |
+| 598 | The signing window for "{recipientName}" on document "{documentName}" has expired. | חלון הזמן לחתימה של "{recipientName}" על המסמך "{documentName}" פג. | packages/email/templates/recipient-expired.tsx |
+| 599 | The signing window for {displayName} on document "{documentName}" has expired. You can resend the document to extend their deadline or cancel the document. | חלון הזמן לחתימה של {displayName} על המסמך "{documentName}" פג. באפשרותכם לשלוח את המסמך מחדש כדי להאריך את המועד, או לבטל את המסמך. | packages/email/template-components/template-recipient-expired.tsx |
+| 600 | The team email &lt;0&gt;{teamEmail}&lt;/0&gt; has been removed from the following team | כתובת הדוא״ל של הצוות &lt;0&gt;{teamEmail}&lt;/0&gt; הוסרה מהצוות הבא | packages/email/templates/team-email-removed.tsx |
+| 601 | There is no action required on your side. If you believe this was a mistake, please contact the document sender. | אין צורך בפעולה מצדכם. אם לדעתכם מדובר בטעות, נא לפנות לשולח המסמך. | packages/email/template-components/template-recipient-removed-by-admin.tsx |
+| 602 | There is no action required on your side. If you believe this was a mistake, please contact your administrator. | אין צורך בפעולה מצדכם. אם לדעתכם מדובר בטעות, נא לפנות למנהל המערכת. | packages/email/template-components/template-recipient-removed-by-admin.tsx |
+| 603 | There was an issue rendering some fields, please review the fields and try again. | אירעה בעיה בהצגת חלק מהשדות. נא לבדוק את השדות ולנסות שוב. | packages/lib/constants/pdf-viewer-i18n.ts |
+| 604 | This direct link template cannot be used because one or more signers do not have a signature field assigned. Please contact the sender to update the template. | לא ניתן להשתמש בתבנית קישור ישיר זו, משום שלאחד החותמים או יותר לא הוקצה שדה חתימה. נא לפנות לשולח לעדכון התבנית. | apps/remix/app/components/general/direct-template/direct-template-invalid-page.tsx |
+| 605 | This document can not be recovered, if you would like to dispute the reason for future documents please contact support. | לא ניתן לשחזר מסמך זה. אם ברצונכם לערער על הסיבה לגבי מסמכים עתידיים, נא לפנות לתמיכה. | packages/email/template-components/template-document-super-delete.tsx |
+| 606 | This document has been cancelled by the owner and is no longer available for others to sign. | מסמך זה בוטל על ידי הבעלים ואינו זמין עוד לחתימה. | apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx |
+| 607 | This document has been cancelled by the owner. | מסמך זה בוטל על ידי הבעלים. | apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx, apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx |
+| 608 | This document is available in your Documenso account. You can view more details, recipients, and audit logs there. | מסמך זה זמין בחשבון שלכם. שם ניתן לצפות בפרטים נוספים, בנמענים וביומני הביקורת. | apps/remix/app/components/general/document/document-certificate-qr-view.tsx |
+| 609 | This document is no longer available to sign because the account that sent it has been disabled, likely due to spam or abuse. | מסמך זה אינו זמין עוד לחתימה, משום שהחשבון ששלח אותו הושבת, ככל הנראה בשל דואר זבל או שימוש לרעה. | apps/remix/app/components/embed/embed-sender-disabled.tsx, apps/remix/app/components/general/document-signing/document-signing-sender-disabled-page.tsx |
+| 610 | This document requires a qualified electronic signature. Sign in with your signing provider to continue. | מסמך זה מחייב חתימה אלקטרונית מאושרת. יש להתחבר באמצעות ספק החתימה כדי להמשיך. | apps/remix/app/components/embed/embed-csc-authentication-required.tsx |
+| 611 | This document was already signed and no further action was taken. | מסמך זה כבר נחתם, ולא בוצעה פעולה נוספת. | apps/remix/app/components/general/envelope-signing/envelope-signing-complete-dialog.tsx |
+| 612 | This document was sent using &lt;0&gt;Documenso&lt;/0&gt;. | מסמך זה נשלח באמצעות &lt;0&gt;מערכת חתימה בקוד פתוח&lt;/0&gt;. | packages/email/template-components/template-footer.tsx |
+| 613 | This email confirms that you have rejected the document &lt;0&gt;"{documentName}"&lt;/0&gt; sent by {documentOwnerName}. | הודעה זו מאשרת שדחיתם את המסמך &lt;0&gt;"{documentName}"&lt;/0&gt; שנשלח על ידי {documentOwnerName}. | packages/email/template-components/template-document-rejection-confirmed.tsx |
+| 614 | This feature is not available on your current plan | אפשרות זו אינה זמינה בתוכנית הנוכחית שלכם | apps/remix/app/components/embed/embed-paywall.tsx |
+| 615 | This image is invalid, please upload a valid image file. | התמונה אינה תקינה. נא להעלות קובץ תמונה תקין. | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 616 | This signing request is missing its details. Close this window and try again. | חסרים פרטים בבקשת החתימה. נא לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 617 | This window must be opened from a Documenso embed. | יש לפתוח חלון זה מתוך הטמעה של המערכת. | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 618 | Time Zone | אזור זמן | apps/remix/app/routes/_internal+/[__htmltopdf]+/audit-log.tsx, packages/lib/server-only/pdf/render-audit-logs.ts |
+| 619 | To approve this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לאשר מסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 620 | To approve this document, you need to be logged in. | כדי לאשר מסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 621 | To approve this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לאשר שדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 622 | To approve this field, you need to be logged in. | כדי לאשר שדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 623 | To assist with this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לסייע במסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 624 | To assist with this document, you need to be logged in. | כדי לסייע במסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 625 | To assist with this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לסייע בשדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 626 | To assist with this field, you need to be logged in. | כדי לסייע בשדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 627 | To get started, please set your password by clicking the button below: | כדי להתחיל, נא להגדיר סיסמה בלחיצה על הכפתור שלמטה: | packages/email/template-components/template-admin-user-created.tsx |
+| 628 | To mark this document as viewed, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לסמן מסמך זה כנצפה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 629 | To mark this document as viewed, you need to be logged in. | כדי לסמן מסמך זה כנצפה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 630 | To sign this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לחתום על מסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 631 | To sign this document, you need to be logged in. | כדי לחתום על מסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 632 | To sign this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לחתום על שדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 633 | To sign this field, you need to be logged in. | כדי לחתום על שדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 634 | To use our electronic signature service, you must have access to: | כדי להשתמש בשירות החתימה האלקטרונית שלנו, נדרשת לכם גישה אל: | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 635 | To view this document you need to be signed into your account, please sign in to continue. | כדי לצפות במסמך זה יש להתחבר לחשבון. נא להתחבר כדי להמשיך. | apps/remix/app/components/embed/embed-authentication-required.tsx |
+| 636 | To view this document, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לצפות במסמך זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 637 | To view this document, you need to be logged in. | כדי לצפות במסמך זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 638 | To view this field, you need to be logged in as &lt;0&gt;{0}&lt;/0&gt; | כדי לצפות בשדה זה, יש להתחבר בתור &lt;0&gt;{0}&lt;/0&gt; | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 639 | To view this field, you need to be logged in. | כדי לצפות בשדה זה, יש להתחבר. | apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx |
+| 640 | Total rows processed: {totalProcessed} | סה״כ שורות שעובדו: {totalProcessed} | packages/email/templates/bulk-send-complete.tsx |
+| 641 | Try again | ניסיון חוזר | apps/remix/app/components/embed/embed-csc-authentication-required.tsx, apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx, apps/remix/app/components/general/envelope-signing/envelope-signing-csc-status.tsx |
+| 642 | Two-Factor Authentication | אימות דו-שלבי | apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, packages/lib/server-only/pdf/generate-certificate-pdf.ts |
+| 643 | Two-Factor Re-Authentication | אימות דו-שלבי חוזר | apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, packages/lib/server-only/pdf/generate-certificate-pdf.ts |
+| 644 | Type | הקלדה | [Type signature] packages/ui/primitives/signature-pad/signature-pad.tsx |
+| 645 | Type your signature | הקלידו את חתימתכם | packages/ui/primitives/signature-pad/signature-pad-type.tsx |
+| 646 | Typed signatures are not allowed. Please draw your signature. | חתימה מוקלדת אינה מותרת. נא לצייר את החתימה. | apps/remix/app/components/general/document-signing/document-signing-signature-field.tsx |
+| 647 | Unable to sign document | לא ניתן לחתום על המסמך | apps/remix/app/components/embed/embed-document-signing-page-v1.tsx, apps/remix/app/components/embed/multisign/multi-sign-document-signing-view.tsx |
+| 648 | Unable to start the signing flow | לא ניתן להתחיל את תהליך החתימה | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
+| 649 | Unable to upload image | לא ניתן להעלות את התמונה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 650 | Unauthorized | אין הרשאה | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-password.tsx |
+| 651 | Undo | ביטול פעולה | packages/ui/primitives/signature-pad/signature-pad-draw.tsx, packages/ui/primitives/signature-pad/signature-pad-draw.tsx |
+| 652 | Unknown | לא ידוע | apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx (+6) |
+| 653 | Unknown sign in provider. | ספק התחברות לא מוכר. | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 654 | Updating Your Information | עדכון הפרטים שלכם | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 655 | Upload | העלאה | [Upload signature] packages/ui/primitives/signature-pad/signature-pad.tsx |
+| 656 | Upload New Image | העלאת תמונה חדשה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 657 | Upload Signature | העלאת חתימה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 658 | Use your authenticator app to generate a code | יש להשתמש באפליקציית האימות כדי להפיק קוד | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
+| 659 | Use your passkey for authentication | אימות באמצעות מפתח הגישה שלכם | apps/remix/app/components/general/document-signing/document-signing-auth-dialog.tsx |
+| 660 | User | משתמש | packages/lib/server-only/pdf/render-audit-logs.ts |
+| 661 | User Agent | סוכן משתמש (User Agent) | packages/lib/server-only/pdf/render-audit-logs.ts |
+| 662 | Validation failed | האימות נכשל | apps/remix/app/components/dialogs/sign-field-checkbox-dialog.tsx |
+| 663 | Verification Code Required | נדרש קוד אימות | packages/email/template-components/template-access-auth-2fa.tsx |
+| 664 | Verify & Complete | אימות והשלמה | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
+| 665 | Verify your email, then close this window and try again. | יש לאמת את כתובת הדוא״ל, ואז לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 666 | Verify your team email address | אימות כתובת הדוא״ל של הצוות | packages/email/templates/confirm-team-email.tsx |
+| 667 | View | צפייה | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
+| 668 | View | לצפות במסמך | [Recipient role action verb] packages/lib/constants/recipient-roles.ts |
+| 669 | View all documents sent to and from this email address | צפייה בכל המסמכים שנשלחו אל כתובת דוא״ל זו וממנה | packages/email/templates/confirm-team-email.tsx |
+| 670 | View document | צפייה במסמך | packages/email/templates/document-created-from-direct-template.tsx |
+| 671 | View Document | צפייה במסמך | apps/remix/app/components/general/document-signing/document-signing-mobile-widget.tsx, apps/remix/app/components/general/document-signing/document-signing-page-view-v1.tsx, apps/remix/app/components/general/document-signing/document-signing-page-view-v2.tsx (+4) |
+| 672 | View Document to approve | צפייה במסמך לאישור | packages/email/template-components/template-document-invite.tsx |
+| 673 | View Document to assist | צפייה במסמך לסיוע | packages/email/template-components/template-document-invite.tsx |
+| 674 | View Document to sign | צפייה במסמך לחתימה | packages/email/template-components/template-document-invite.tsx |
+| 675 | View next document | צפייה במסמך הבא | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
+| 676 | View plans | צפייה בתוכניות | packages/email/template-components/template-document-self-signed.tsx |
+| 677 | Viewed | נצפה | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx, apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx, packages/lib/server-only/pdf/render-certificate.ts |
+| 678 | Viewed | צפה/תה במסמך | [Recipient role actioned] packages/lib/constants/recipient-roles.ts |
+| 679 | Viewer | צופה | apps/remix/app/components/general/envelope-signing/envelope-signer-header.tsx |
+| 680 | Viewer | צופה | [Recipient role name] packages/lib/constants/recipient-roles.ts |
+| 681 | Viewers | צופים | [Recipient role plural name] packages/lib/constants/recipient-roles.ts |
+| 682 | Viewing | צופה | [Recipient role progressive verb] packages/lib/constants/recipient-roles.ts |
+| 683 | Waiting for others | ממתינים לאחרים | packages/email/template-components/template-document-pending.tsx |
+| 684 | Waiting for others to complete signing | ממתינים להשלמת החתימה על ידי האחרים | packages/lib/jobs/definitions/emails/send-document-pending-email.handler.ts |
+| 685 | Waiting for others to sign | ממתינים לחתימת האחרים | apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx |
+| 686 | Waiting for Your Turn | ממתינים לתורכם | apps/remix/app/components/embed/embed-document-waiting-for-turn.tsx, apps/remix/app/routes/_recipient+/sign.$token+/waiting.tsx |
+| 687 | Want to send slick signing links like this one? &lt;0&gt;Check out Documenso&lt;/0&gt;. | רוצים לשלוח קישורי חתימה כמו זה? &lt;0&gt;למידע נוסף&lt;/0&gt;. | apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx, apps/remix/app/routes/_recipient+/sign.$token+/_index.tsx |
+| 688 | Warning: This was sent from a new account ({senderEmail}) | אזהרה: הודעה זו נשלחה מחשבון חדש ({senderEmail}) | packages/email/template-components/template-new-account-warning.tsx |
+| 689 | We encountered an unknown error while attempting to request the two-factor authentication code. Please try again later. | אירעה שגיאה לא ידועה בבקשת קוד האימות הדו-שלבי. נא לנסות שוב מאוחר יותר. | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx, apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
+| 690 | We were unable to log you out at this time. | לא ניתן היה לנתק אתכם כעת. | apps/remix/app/components/general/direct-template/direct-template-signing-auth-page.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-account.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-page.tsx |
+| 691 | We were unable to report this sender at this time. Please try again later. | לא ניתן היה לדווח על שולח זה כעת. נא לנסות שוב מאוחר יותר. | apps/remix/app/routes/_recipient+/report.$token.tsx |
+| 692 | We were unable to start the sign in flow. Close this window and try again. | לא ניתן היה להתחיל את תהליך ההתחברות. נא לסגור חלון זה ולנסות שוב. | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 693 | We were unable to verify your details. Please try again or contact support | לא ניתן היה לאמת את הפרטים שלכם. נא לנסות שוב או לפנות לתמיכה | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-password.tsx |
+| 694 | We'll send a 6-digit code to your email | קוד בן 6 ספרות יישלח לכתובת הדוא״ל שלכם | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
+| 695 | We're still waiting for other signers to sign this document.&lt;0/&gt;We'll notify you as soon as it's ready. | אנו עדיין ממתינים לחתימת שאר החותמים על מסמך זה.&lt;0/&gt;נעדכן אתכם ברגע שהמסמך יהיה מוכן. | packages/email/template-components/template-document-pending.tsx |
+| 696 | We've changed your password as you asked. You can now sign in with your new password. | שינינו את הסיסמה כפי שביקשתם. כעת ניתן להתחבר עם הסיסמה החדשה. | packages/email/templates/reset-password.tsx |
+| 697 | We've noticed API activity on your account that exceeds the fair use limits of your current plan. As a precaution, new API activity has been temporarily paused pending review. | זיהינו בחשבון שלכם פעילות API החורגת ממגבלות השימוש ההוגן של התוכנית הנוכחית. כאמצעי זהירות, פעילות API חדשה הושהתה זמנית עד לבדיקה. | packages/email/templates/organisation-limit-alert.tsx |
+| 698 | We've noticed document activity on your account that exceeds the fair use limits of your current plan. As a precaution, new document activity has been temporarily paused pending review. | זיהינו בחשבון שלכם פעילות מסמכים החורגת ממגבלות השימוש ההוגן של התוכנית הנוכחית. כאמצעי זהירות, פעילות מסמכים חדשה הושהתה זמנית עד לבדיקה. | packages/email/templates/organisation-limit-alert.tsx |
+| 699 | We've noticed email sending activity on your account that exceeds the fair use limits of your current plan. As a precaution, new email activity has been temporarily paused pending review. | זיהינו בחשבון שלכם פעילות שליחת דוא״ל החורגת ממגבלות השימוש ההוגן של התוכנית הנוכחית. כאמצעי זהירות, שליחת דוא״ל חדשה הושהתה זמנית עד לבדיקה. | packages/email/templates/organisation-limit-alert.tsx |
+| 700 | We've sent a 6-digit verification code to your email. Please enter it below to complete the document. | שלחנו קוד אימות בן 6 ספרות לכתובת הדוא״ל שלכם. נא להזין אותו למטה כדי להשלים את המסמך. | apps/remix/app/components/general/document-signing/access-auth-2fa-form.tsx |
+| 701 | We've updated the usage limits for your organisation. | עדכנו את מגבלות השימוש של הארגון שלכם. | packages/email/templates/organisation-limits-updated.tsx |
+| 702 | Welcome | ברוכים הבאים | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 703 | Welcome to Documenso | ברוכים הבאים | packages/lib/jobs/definitions/emails/send-admin-user-created-email.handler.ts |
+| 704 | Welcome to Documenso! | ברוכים הבאים! | packages/email/template-components/template-admin-user-created.tsx, packages/email/template-components/template-confirmation-email.tsx |
+| 705 | Were you trying to edit this document instead? | האם התכוונתם לערוך את המסמך? | apps/remix/app/routes/_recipient+/sign.$token+/waiting.tsx |
+| 706 | When you sign a document, we can automatically fill in and sign the following fields using information that has already been provided. You can also manually sign or remove any automatically signed fields afterwards if you desire. | בעת החתימה על מסמך, נוכל למלא ולחתום באופן אוטומטי על השדות הבאים באמצעות מידע שכבר נמסר. לאחר מכן תוכלו, אם תרצו, לחתום ידנית על שדות שנחתמו אוטומטית או להסיר אותם. | apps/remix/app/components/general/document-signing/document-signing-auto-sign.tsx |
+| 707 | When you use our platform to affix your electronic signature to documents, you are consenting to do so under the Electronic Signatures in Global and National Commerce Act (E-Sign Act) and other applicable laws. This action indicates your agreement to use electronic means to sign documents and receive notifications. | בשימוש בפלטפורמה שלנו להוספת החתימה האלקטרונית שלכם למסמכים, הנכם מסכימים לעשות זאת בהתאם לחוק החתימות האלקטרוניות בסחר העולמי והלאומי (E-Sign Act) ולדינים החלים האחרים. פעולה זו מעידה על הסכמתכם להשתמש באמצעים אלקטרוניים לחתימה על מסמכים ולקבלת הודעות. | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 708 | Withdrawing Consent | ביטול ההסכמה | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 709 | You | אתם | packages/lib/utils/document-audit-logs.ts |
+| 710 | You added a field | הוספתם שדה | packages/lib/utils/document-audit-logs.ts |
+| 711 | You added a recipient | הוספתם נמען | packages/lib/utils/document-audit-logs.ts |
+| 712 | You approved the document | אישרתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 713 | You are about to complete approving the following document | אתם עומדים להשלים את אישור המסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
+| 714 | You are about to complete assisting the following document | אתם עומדים להשלים את הסיוע במסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
+| 715 | You are about to complete signing the following document | אתם עומדים להשלים את החתימה על המסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
+| 716 | You are about to complete viewing the following document | אתם עומדים להשלים את הצפייה במסמך הבא | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
+| 717 | You are currently signed in as &lt;0&gt;{signedInAs}&lt;/0&gt;. Signing in below will switch accounts. | אתם מחוברים כעת בתור &lt;0&gt;{signedInAs}&lt;/0&gt;. התחברות למטה תחליף את החשבון. | apps/remix/app/components/embed/embed-popup-auth.tsx |
+| 718 | You authenticated with the signing provider | ביצעתם אימות מול ספק החתימה | packages/lib/utils/document-audit-logs.ts |
+| 719 | You authorised the remote signature | אישרתם את החתימה המרוחקת | packages/lib/utils/document-audit-logs.ts |
+| 720 | You can also copy and paste this link into your browser: {confirmationLink} (link expires in 1 hour) | ניתן גם להעתיק את הקישור הבא ולהדביק אותו בדפדפן: {confirmationLink} (תוקף הקישור יפוג בעוד שעה) | packages/email/template-components/template-confirmation-email.tsx |
+| 721 | You can also copy and paste this link into your browser: {resetPasswordLink} (link expires in 24 hours) | ניתן גם להעתיק את הקישור הבא ולהדביק אותו בדפדפן: {resetPasswordLink} (תוקף הקישור יפוג בעוד 24 שעות) | packages/email/template-components/template-admin-user-created.tsx |
+| 722 | You can close this window. | ניתן לסגור חלון זה. | apps/remix/app/routes/embed+/auth+/complete.tsx |
+| 723 | You can revoke access at any time in your team settings on Documenso &lt;0&gt;here&lt;/0&gt;. | ניתן לבטל את הגישה בכל עת בהגדרות הצוות &lt;0&gt;כאן&lt;/0&gt;. | packages/email/templates/confirm-team-email.tsx |
+| 724 | You can view the created documents in your dashboard under the "Documents created from template" section. | ניתן לצפות במסמכים שנוצרו בלוח הבקרה, בקטע "מסמכים שנוצרו מתבנית". | packages/email/templates/bulk-send-complete.tsx |
+| 725 | You can view the document and its status by clicking the button below. | ניתן לצפות במסמך ובסטטוס שלו בלחיצה על הכפתור שלמטה. | packages/email/template-components/template-document-rejected.tsx |
+| 726 | You cancelled the document | ביטלתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 727 | You CC'd the document | קיבלתם עותק של המסמך | packages/lib/utils/document-audit-logs.ts |
+| 728 | You completed your task | השלמתם את המשימה שלכם | packages/lib/utils/document-audit-logs.ts |
+| 729 | You created an envelope item with title {0} | יצרתם פריט מעטפה בשם {0} | packages/lib/utils/document-audit-logs.ts |
+| 730 | You created the document | יצרתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 731 | You deleted an envelope item with title {0} | מחקתם פריט מעטפה בשם {0} | packages/lib/utils/document-audit-logs.ts |
+| 732 | You deleted the document | מחקתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 733 | You don't need to sign it anymore. | אין עוד צורך לחתום עליו. | packages/email/template-components/template-document-cancel.tsx |
+| 734 | You failed to validate a 2FA token for the document | אימות קוד ה-2FA שלכם למסמך נכשל | packages/lib/utils/document-audit-logs.ts |
+| 735 | You have been invited to join the following organisation | הוזמנתם להצטרף לארגון הבא | packages/email/templates/organisation-invite.tsx |
+| 736 | You have been removed from a document | הוסרתם ממסמך | packages/email/template-components/template-recipient-removed-by-admin.tsx, packages/lib/jobs/definitions/emails/send-admin-recipient-removed-emails.handler.ts, packages/lib/jobs/definitions/emails/send-recipient-removed-email.handler.ts |
+| 737 | You have been removed from the document "{documentName}" by an administrator, typically at the request of the document sender. | הוסרתם מהמסמך "{documentName}" על ידי מנהל מערכת, בדרך כלל לבקשת שולח המסמך. | packages/email/template-components/template-recipient-removed-by-admin.tsx |
+| 738 | You have been removed from the document "{documentName}" by an administrator. | הוסרתם מהמסמך "{documentName}" על ידי מנהל מערכת. | packages/email/templates/recipient-removed-by-admin.tsx |
+| 739 | You have been requested to sign the following documents. Review each document carefully and complete the signing process. | התבקשתם לחתום על המסמכים הבאים. נא לעיין בכל מסמך בקפידה ולהשלים את תהליך החתימה. | apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx |
+| 740 | You have initiated the document {0} that requires you to {recipientActionVerb} it. | יזמתם את המסמך {0}, ויש {recipientActionVerb}. | packages/lib/jobs/definitions/emails/send-signing-email.handler.ts, packages/lib/server-only/document/resend-document.ts |
+| 741 | You have rejected the document '{documentName}' | דחיתם את המסמך '{documentName}' | packages/email/templates/document-rejection-confirmed.tsx |
+| 742 | You have rejected this document | דחיתם מסמך זה | apps/remix/app/components/embed/embed-document-rejected.tsx, apps/remix/app/routes/_recipient+/sign.$token+/rejected.tsx |
+| 743 | You have signed “{documentName}” | חתמתם על „{documentName}” | packages/email/template-components/template-document-self-signed.tsx |
+| 744 | You have the right to withdraw your consent to use electronic signatures at any time before completing the signing process. To withdraw your consent, please contact the sender of the document. In failing to contact the sender you may reach out to &lt;0&gt;{SUPPORT_EMAIL}&lt;/0&gt; for assistance. Be aware that withdrawing consent may delay or halt the completion of the related transaction or service. | באפשרותכם לבטל את הסכמתכם לשימוש בחתימות אלקטרוניות בכל עת לפני השלמת תהליך החתימה. לביטול ההסכמה, נא לפנות לשולח המסמך. אם לא ניתן ליצור קשר עם השולח, ניתן לפנות לקבלת סיוע אל &lt;0&gt;{SUPPORT_EMAIL}&lt;/0&gt;. לתשומת לבכם, ביטול ההסכמה עלול לעכב או לעצור את השלמת העסקה או השירות הקשורים. | apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx |
+| 745 | You moved the document to team | העברתם את המסמך לצוות | packages/lib/utils/document-audit-logs.ts |
+| 746 | You need to be logged in as &lt;0&gt;{email}&lt;/0&gt; to view this page. | כדי לצפות בדף זה יש להתחבר בתור &lt;0&gt;{email}&lt;/0&gt;. | apps/remix/app/components/general/document-signing/document-signing-auth-page.tsx |
+| 747 | You need to be logged in to view this page. | כדי לצפות בדף זה יש להתחבר. | apps/remix/app/components/general/direct-template/direct-template-signing-auth-page.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-page.tsx |
+| 748 | You need to setup 2FA to approve this document. | כדי לאשר מסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 749 | You need to setup 2FA to approve this field. | כדי לאשר שדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 750 | You need to setup 2FA to assist with this document. | כדי לסייע במסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 751 | You need to setup 2FA to assist with this field. | כדי לסייע בשדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 752 | You need to setup 2FA to mark this document as viewed. | כדי לסמן מסמך זה כנצפה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 753 | You need to setup 2FA to sign this document. | כדי לחתום על מסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 754 | You need to setup 2FA to sign this field. | כדי לחתום על שדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 755 | You need to setup 2FA to view this document. | כדי לצפות במסמך זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 756 | You need to setup 2FA to view this field. | כדי לצפות בשדה זה יש להגדיר 2FA. | apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx |
+| 757 | You need to setup a passkey to approve this document. | כדי לאשר מסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 758 | You need to setup a passkey to approve this field. | כדי לאשר שדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 759 | You need to setup a passkey to assist with this document. | כדי לסייע במסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 760 | You need to setup a passkey to assist with this field. | כדי לסייע בשדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 761 | You need to setup a passkey to mark this document as viewed. | כדי לסמן מסמך זה כנצפה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 762 | You need to setup a passkey to sign this document. | כדי לחתום על מסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 763 | You need to setup a passkey to sign this field. | כדי לחתום על שדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 764 | You need to setup a passkey to view this document. | כדי לצפות במסמך זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 765 | You need to setup a passkey to view this field. | כדי לצפות בשדה זה יש להגדיר מפתח גישה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 766 | You opened the document | פתחתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 767 | You prefilled a field | מילאתם שדה מראש | packages/lib/utils/document-audit-logs.ts |
+| 768 | You rejected the document | דחיתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 769 | You removed a field | הסרתם שדה | packages/lib/utils/document-audit-logs.ts |
+| 770 | You removed a recipient | הסרתם נמען | packages/lib/utils/document-audit-logs.ts |
+| 771 | You removed a recipient as an administrator | הסרתם נמען בהרשאת מנהל מערכת | packages/lib/utils/document-audit-logs.ts |
+| 772 | You replaced the PDF for envelope item {0} | החלפתם את קובץ ה-PDF של פריט המעטפה {0} | packages/lib/utils/document-audit-logs.ts |
+| 773 | You requested a 2FA token for the document | ביקשתם קוד 2FA למסמך | packages/lib/utils/document-audit-logs.ts |
+| 774 | You requested a remote signature | ביקשתם חתימה מרוחקת | packages/lib/utils/document-audit-logs.ts |
+| 775 | You resent an email to {0} | שלחתם שוב דוא״ל אל {0} | packages/lib/utils/document-audit-logs.ts |
+| 776 | You sent an email to {0} | שלחתם דוא״ל אל {0} | packages/lib/utils/document-audit-logs.ts |
+| 777 | You sent the document | שלחתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 778 | You signed a field | חתמתם על שדה | packages/lib/utils/document-audit-logs.ts |
+| 779 | You signed the document | חתמתם על המסמך | packages/lib/utils/document-audit-logs.ts |
+| 780 | You unsigned a field | ביטלתם חתימה על שדה | packages/lib/utils/document-audit-logs.ts |
+| 781 | You updated a field | עדכנתם שדה | packages/lib/utils/document-audit-logs.ts |
+| 782 | You updated a recipient | עדכנתם נמען | packages/lib/utils/document-audit-logs.ts |
+| 783 | You updated an envelope item | עדכנתם פריט מעטפה | packages/lib/utils/document-audit-logs.ts |
+| 784 | You updated the document | עדכנתם את המסמך | packages/lib/utils/document-audit-logs.ts |
+| 785 | You updated the document access auth requirements | עדכנתם את דרישות האימות לגישה למסמך | packages/lib/utils/document-audit-logs.ts |
+| 786 | You updated the document external ID | עדכנתם את המזהה החיצוני של המסמך | packages/lib/utils/document-audit-logs.ts |
+| 787 | You updated the document signing auth requirements | עדכנתם את דרישות האימות לחתימה על המסמך | packages/lib/utils/document-audit-logs.ts |
+| 788 | You updated the document title | עדכנתם את כותרת המסמך | packages/lib/utils/document-audit-logs.ts |
+| 789 | You updated the document visibility | עדכנתם את נראות המסמך | packages/lib/utils/document-audit-logs.ts |
+| 790 | You validated a 2FA token for the document | אימתתם קוד 2FA למסמך | packages/lib/utils/document-audit-logs.ts |
+| 791 | You viewed the document | צפיתם במסמך | packages/lib/utils/document-audit-logs.ts, packages/lib/utils/document-audit-logs.ts |
+| 792 | You will be redirected to sign in, then returned here. | תועברו להתחברות, ולאחר מכן תוחזרו לכאן. | apps/remix/app/routes/embed+/auth+/popup.tsx |
+| 793 | You will receive an email copy of the signed document once everyone has signed. | עותק של המסמך החתום יישלח אליכם בדוא״ל לאחר שכל הנמענים יחתמו. | apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx |
+| 794 | You won't be able to sign in or send documents while it is disabled. | כל עוד החשבון מושבת, לא ניתן להתחבר או לשלוח מסמכים. | packages/email/template-components/template-account-disabled.tsx |
+| 795 | Your account does not have a password and password sign in is disabled for this instance. Please contact the document sender to use a different authentication method. | לחשבון שלכם לא הוגדרה סיסמה, וההתחברות באמצעות סיסמה מושבתת במערכת זו. נא לפנות לשולח המסמך כדי להשתמש בשיטת אימות אחרת. | apps/remix/app/components/general/document-signing/document-signing-auth-set-password.tsx |
+| 796 | Your account has been disabled | החשבון שלכם הושבת | packages/email/template-components/template-account-disabled.tsx |
+| 797 | Your browser blocked the sign in window. Allow popups for this site and try again. | הדפדפן חסם את חלון ההתחברות. יש לאפשר חלונות קופצים לאתר זה ולנסות שוב. | apps/remix/app/components/embed/embed-popup-auth.tsx |
+| 798 | Your browser does not support passkeys, which is required to approve this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לאישור מסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 799 | Your browser does not support passkeys, which is required to approve this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לאישור שדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 800 | Your browser does not support passkeys, which is required to assist with this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לסיוע במסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 801 | Your browser does not support passkeys, which is required to assist with this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לסיוע בשדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 802 | Your browser does not support passkeys, which is required to mark this document as viewed. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לסימון מסמך זה כנצפה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 803 | Your browser does not support passkeys, which is required to sign this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לחתימה על מסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 804 | Your browser does not support passkeys, which is required to sign this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לחתימה על שדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 805 | Your browser does not support passkeys, which is required to view this document. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לצפייה במסמך זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 806 | Your browser does not support passkeys, which is required to view this field. | הדפדפן שלכם אינו תומך במפתחות גישה, הנדרשים לצפייה בשדה זה. | apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx, apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx |
+| 807 | Your browser is blocking the cookies needed to keep you signed in inside this embed. Open this document in a new tab instead. | הדפדפן שלכם חוסם את קובצי ה-Cookie הנדרשים כדי לשמור על החיבור בתוך ההטמעה. נא לפתוח מסמך זה בלשונית חדשה. | apps/remix/app/components/embed/embed-popup-auth.tsx |
+| 808 | Your browser needs permission to keep you signed in inside this embed. Press Continue and allow access when Safari asks. | הדפדפן זקוק להרשאה כדי לשמור על החיבור שלכם בתוך ההטמעה. לחצו על "המשך" ואשרו את הגישה כש-Safari יבקש זאת. | apps/remix/app/components/embed/embed-popup-auth.tsx |
+| 809 | Your bulk send operation for template "{templateName}" has completed. | השליחה המרובה עבור התבנית "{templateName}" הושלמה. | packages/email/templates/bulk-send-complete.tsx |
+| 810 | Your Documenso account has been disabled | החשבון שלכם הושבת | packages/email/templates/account-disabled.tsx, packages/lib/jobs/definitions/emails/send-account-disabled-email.handler.ts |
+| 811 | Your document has been deleted by an admin! | המסמך שלכם נמחק על ידי מנהל מערכת! | packages/email/template-components/template-document-super-delete.tsx |
+| 812 | Your Email | כתובת הדוא״ל שלכם | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
+| 813 | Your Name | השם שלכם | apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx |
+| 814 | Your organisation has been deleted | הארגון שלכם נמחק | packages/email/templates/organisation-delete.tsx, packages/email/templates/organisation-delete.tsx |
+| 815 | Your organisation is generating API requests faster than normal, so some requests are being temporarily throttled. | הארגון שלכם מבצע בקשות API בקצב גבוה מהרגיל, ולכן חלק מהבקשות מוגבלות זמנית. | packages/email/templates/organisation-limit-alert.tsx |
+| 816 | Your organisation is generating documents faster than normal, so some requests are being temporarily throttled. | הארגון שלכם יוצר מסמכים בקצב גבוה מהרגיל, ולכן חלק מהבקשות מוגבלות זמנית. | packages/email/templates/organisation-limit-alert.tsx |
+| 817 | Your organisation is generating emails faster than normal, so some requests are being temporarily throttled. | הארגון שלכם שולח הודעות דוא״ל בקצב גבוה מהרגיל, ולכן חלק מהבקשות מוגבלות זמנית. | packages/email/templates/organisation-limit-alert.tsx |
+| 818 | Your organisation is nearing its fair use limits for creating documents on your current plan. Once the limit is reached, new document activity will be temporarily paused. | הארגון שלכם מתקרב למגבלות השימוש ההוגן ליצירת מסמכים בתוכנית הנוכחית. עם ההגעה למגבלה, פעילות מסמכים חדשה תושהה זמנית. | packages/email/templates/organisation-limit-alert.tsx |
+| 819 | Your organisation is nearing its fair use limits for making API requests on your current plan. Once the limit is reached, new API activity will be temporarily paused. | הארגון שלכם מתקרב למגבלות השימוש ההוגן לבקשות API בתוכנית הנוכחית. עם ההגעה למגבלה, פעילות API חדשה תושהה זמנית. | packages/email/templates/organisation-limit-alert.tsx |
+| 820 | Your organisation is nearing its fair use limits for sending email on your current plan. Once the limit is reached, new email activity will be temporarily paused. | הארגון שלכם מתקרב למגבלות השימוש ההוגן לשליחת דוא״ל בתוכנית הנוכחית. עם ההגעה למגבלה, שליחת דוא״ל חדשה תושהה זמנית. | packages/email/templates/organisation-limit-alert.tsx |
+| 821 | Your organisation limits have been updated | מגבלות הארגון שלכם עודכנו | packages/email/templates/organisation-limits-updated.tsx |
+| 822 | Your password has been updated. | הסיסמה שלכם עודכנה. | packages/email/template-components/template-reset-password.tsx |
+| 823 | Your password was changed | הסיסמה שלכם שונתה | packages/email/templates/reset-password.tsx |
+| 824 | Your password was just changed from your account security settings. | הסיסמה שלכם שונתה זה עתה דרך הגדרות האבטחה של החשבון. | packages/email/templates/reset-password.tsx |
+| 825 | Your remote signature was applied | החתימה המרוחקת שלכם הוחלה | packages/lib/utils/document-audit-logs.ts |
+| 826 | Your signing authorisation expired before the signature could be applied. Please reauthorise to retry. | תוקף הרשאת החתימה שלכם פג לפני שניתן היה להחיל את החתימה. נא לאשר מחדש כדי לנסות שוב. | apps/remix/app/components/general/document-signing/csc-recipient-signing-in-progress-page.tsx, apps/remix/app/components/general/envelope-signing/envelope-signing-csc-status.tsx |
+| 827 | Your signing certificate is invalid, expired, or missing a required key. Contact your administrator or signing provider for assistance. | תעודת החתימה שלכם אינה תקינה, פג תוקפה או שחסר בה מפתח נדרש. לסיוע, נא לפנות למנהל המערכת או לספק החתימה. | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
+| 828 | Your signing provider authentication failed | האימות שלכם מול ספק החתימה נכשל | packages/lib/utils/document-audit-logs.ts |
+| 829 | Your signing provider does not advertise a signing algorithm this document accepts. Contact your administrator or signing provider for assistance. | ספק החתימה שלכם אינו מציע אלגוריתם חתימה שמסמך זה מקבל. לסיוע, נא לפנות למנהל המערכת או לספק החתימה. | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
+| 830 | Your signing provider returned no usable credentials for this account. Contact your administrator or signing provider for assistance. | ספק החתימה שלכם לא החזיר אמצעי חתימה שמישים עבור חשבון זה. לסיוע, נא לפנות למנהל המערכת או לספק החתימה. | apps/remix/app/components/general/document-signing/csc-recipient-blocked-page.tsx |
+| 831 | Your signing window for this document has expired. Please contact the sender for a new invitation. | חלון הזמן לחתימתכם על מסמך זה פג. נא לפנות לשולח לקבלת הזמנה חדשה. | apps/remix/app/components/embed/embed-recipient-expired.tsx |
+| 832 | Your two-factor authentication code | קוד האימות הדו-שלבי שלכם | packages/lib/server-only/2fa/email/send-2fa-token-email.ts |
+| 833 | Your verification code is {code} | קוד האימות שלכם הוא {code} | packages/email/templates/access-auth-2fa.tsx |
+| 834 | Your verification code: | קוד האימות שלכם: | packages/email/template-components/template-access-auth-2fa.tsx |
+| 835 | Zoom in | הגדלה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx, packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
+| 836 | Zoom out | הקטנה | packages/ui/primitives/signature-pad/signature-pad-upload.tsx, packages/ui/primitives/signature-pad/signature-pad-upload.tsx |
