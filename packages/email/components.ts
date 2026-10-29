@@ -1,5 +1,4 @@
 export {
-  Body,
   Button,
   Column,
   Container,
@@ -7,7 +6,6 @@ export {
   Head,
   Heading,
   Hr,
-  Html,
   Img,
   Link,
   Preview,
@@ -17,3 +15,6 @@ export {
   Tailwind,
   Text,
 } from 'react-email';
+
+// VoIPe fork: locale-aware (RTL) Html/Body, see locale-direction.tsx
+export { Body, Html } from './locale-direction';

@@ -20,7 +20,7 @@ export const TemplateDocumentPending = ({ documentName, assetBaseUrl }: Template
             <Text className="font-semibold text-base text-foreground">
               <Img
                 src={getEmailAssetUrl(assetBaseUrl, 'static/clock.png')}
-                className="-mt-0.5 mr-2 inline h-7 w-7 align-middle"
+                className="-mt-0.5 mx-1 inline h-7 w-7 align-middle"
                 alt=""
               />
               <Trans>Waiting for others</Trans>

@@ -25,7 +25,7 @@ export const TemplateDocumentSelfSigned = ({ documentName, assetBaseUrl }: Templ
             <Text className="font-semibold text-base text-foreground">
               <Img
                 src={getEmailAssetUrl(assetBaseUrl, 'static/completed.png')}
-                className="-mt-0.5 mr-2 inline h-7 w-7 align-middle"
+                className="-mt-0.5 mx-1 inline h-7 w-7 align-middle"
                 alt=""
               />
               <Trans>Completed</Trans>
@@ -50,11 +50,11 @@ export const TemplateDocumentSelfSigned = ({ documentName, assetBaseUrl }: Templ
         <Section className="mt-8 mb-6 text-center">
           <Button
             href={signUpUrl}
-            className="mr-4 rounded-lg border border-border border-solid px-4 py-2 text-center font-medium text-foreground text-sm no-underline"
+            className="mx-2 rounded-lg border border-border border-solid px-4 py-2 text-center font-medium text-foreground text-sm no-underline"
           >
             <Img
               src={getEmailAssetUrl(assetBaseUrl, 'static/user-plus.png')}
-              className="mr-2 mb-0.5 inline h-5 w-5 align-middle"
+              className="mx-1 mb-0.5 inline h-5 w-5 align-middle"
               alt=""
             />
             <Trans>Create account</Trans>
@@ -66,7 +66,7 @@ export const TemplateDocumentSelfSigned = ({ documentName, assetBaseUrl }: Templ
           >
             <Img
               src={getEmailAssetUrl(assetBaseUrl, 'static/review.png')}
-              className="mr-2 mb-0.5 inline h-5 w-5 align-middle"
+              className="mx-1 mb-0.5 inline h-5 w-5 align-middle"
               alt=""
             />
             <Trans>View plans</Trans>

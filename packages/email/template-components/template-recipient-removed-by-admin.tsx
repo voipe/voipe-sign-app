@@ -28,7 +28,7 @@ export const TemplateRecipientRemovedByAdmin = ({
       <TemplateDocumentImage className="mt-6" assetBaseUrl={assetBaseUrl} />
 
       <Section>
-        <Text className="mt-6 mb-0 text-left font-semibold text-foreground text-lg">
+        <Text className="mt-6 mb-0 text-start font-semibold text-foreground text-lg">
           {audience === 'recipient' ? (
             <Trans>You have been removed from a document</Trans>
           ) : (
@@ -36,7 +36,7 @@ export const TemplateRecipientRemovedByAdmin = ({
           )}
         </Text>
 
-        <Text className="mx-auto mt-1 mb-6 text-left text-base text-muted-foreground">
+        <Text className="mx-auto mt-1 mb-6 text-start text-base text-muted-foreground">
           {audience === 'recipient' ? (
             <Trans>
               You have been removed from the document "{documentName}" by an administrator, typically at the request of
@@ -50,7 +50,7 @@ export const TemplateRecipientRemovedByAdmin = ({
           )}
         </Text>
 
-        <Text className="mx-auto mt-1 mb-6 text-left text-base text-muted-foreground">
+        <Text className="mx-auto mt-1 mb-6 text-start text-base text-muted-foreground">
           {audience === 'recipient' ? (
             <Trans>
               There is no action required on your side. If you believe this was a mistake, please contact the document
