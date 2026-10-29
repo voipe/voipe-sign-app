@@ -263,6 +263,8 @@ const VirtualizedPageList = ({
   return (
     <div
       ref={contentRef}
+      // Page images and field overlays use absolute (physical) coordinates: keep LTR in RTL locales.
+      dir="ltr"
       // Note: This is actually used.
       data-pdf-content=""
       data-page-count={numPages}

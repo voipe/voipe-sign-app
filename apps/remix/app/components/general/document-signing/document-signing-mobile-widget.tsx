@@ -95,7 +95,7 @@ export const DocumentSigningMobileWidget = () => {
                 <motion.div
                   layout="size"
                   layoutId="document-signing-mobile-widget-progress-bar"
-                  className="absolute inset-y-0 left-0 bg-primary"
+                  className="absolute inset-y-0 start-0 bg-primary"
                   style={{
                     width: `${requiredRecipientFields.length === 0 ? 100 : 100 - (100 / requiredRecipientFields.length) * (recipientFieldsRemaining.length ?? 0)}%`,
                   }}
@@ -114,7 +114,7 @@ export const DocumentSigningMobileWidget = () => {
                   <span>
                     <Trans>Powered by</Trans>
                   </span>
-                  <BrandingLogo className="ml-2 inline-block h-[14px]" />
+                  <BrandingLogo className="ms-2 inline-block h-[14px]" />
                 </div>
               )}
             </div>

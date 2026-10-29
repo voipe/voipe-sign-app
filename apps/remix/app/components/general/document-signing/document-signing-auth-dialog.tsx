@@ -89,7 +89,7 @@ export const DocumentSigningAuthDialog = ({
             {selectedAuthType && validAuthTypes.length > 1 && (
               <div className="flex items-center gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={handleBackToChooser} className="h-6 w-6 p-0">
-                  <ChevronLeftIcon className="h-4 w-4" />
+                  <ChevronLeftIcon className="h-4 w-4 rtl:rotate-180" />
                 </Button>
                 <span>{title || <Trans>Sign field</Trans>}</span>
               </div>
@@ -117,7 +117,7 @@ export const DocumentSigningAuthDialog = ({
                   className="h-auto justify-start p-4"
                   onClick={() => setSelectedAuthType(authType)}
                 >
-                  <div className="text-left">
+                  <div className="text-start">
                     <div className="font-medium">
                       {match(authType)
                         .with(DocumentAuth.ACCOUNT, () => <Trans>Account</Trans>)

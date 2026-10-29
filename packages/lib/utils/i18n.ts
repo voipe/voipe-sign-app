@@ -3,7 +3,7 @@ import { i18n } from '@lingui/core';
 import type { MacroMessageDescriptor } from '@lingui/core/macro';
 
 import type { I18nLocaleData, SupportedLanguageCodes } from '../constants/i18n';
-import { APP_I18N_OPTIONS } from '../constants/i18n';
+import { APP_I18N_OPTIONS, getLanguageDirection } from '../constants/i18n';
 import { env } from './env';
 
 export async function getTranslations(locale: string) {
@@ -18,6 +18,12 @@ export async function dynamicActivate(locale: string) {
   const messages = await getTranslations(locale);
 
   i18n.loadAndActivate({ locale, messages });
+
+  // Keep <html lang/dir> in sync when the locale is switched on the client (e.g. embeds).
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = getLanguageDirection(locale);
+  }
 }
 
 const parseLanguageFromLocale = (locale: string): SupportedLanguageCodes | null => {

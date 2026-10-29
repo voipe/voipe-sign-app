@@ -33,7 +33,7 @@ export const EnvelopeSignerHeader = () => {
   return (
     <nav className="embed--DocumentWidgetHeader flex max-w-screen flex-row justify-between border-border border-b bg-background px-4 py-3 md:px-6">
       {/* Left side - Logo and title */}
-      <div className="flex min-w-0 flex-1 items-center space-x-2 md:w-auto md:flex-none">
+      <div className="flex min-w-0 flex-1 items-center space-x-2 rtl:space-x-reverse md:w-auto md:flex-none">
         {!isEmbedSigning &&
           (hasCustomBrandingLogo ? (
             <img
@@ -54,7 +54,7 @@ export const EnvelopeSignerHeader = () => {
 
         {!isEmbedSigning && <Separator orientation="vertical" className="hidden h-6 md:block" />}
 
-        <div className="hidden items-center space-x-2 md:flex">
+        <div className="hidden items-center space-x-2 rtl:space-x-reverse md:flex">
           <h1 className="whitespace-nowrap font-medium text-foreground text-sm">{envelope.title}</h1>
 
           <Badge>
@@ -69,8 +69,8 @@ export const EnvelopeSignerHeader = () => {
       </div>
 
       {/* Right side - Desktop content */}
-      <div className="hidden items-center space-x-2 lg:flex">
-        <p className="mr-2 flex-shrink-0 text-muted-foreground text-sm">
+      <div className="hidden items-center space-x-2 rtl:space-x-reverse lg:flex">
+        <p className="me-2 flex-shrink-0 text-muted-foreground text-sm">
           <Plural one="1 Field Remaining" other="# Fields Remaining" value={recipientFieldsRemaining.length} />
         </p>
 
@@ -110,7 +110,7 @@ const MobileDropdownMenu = () => {
           trigger={
             <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
               <div>
-                <DownloadCloudIcon className="mr-2 h-4 w-4" />
+                <DownloadCloudIcon className="me-2 h-4 w-4" />
                 <Trans>Download PDF</Trans>
               </div>
             </DropdownMenuItem>
@@ -124,7 +124,7 @@ const MobileDropdownMenu = () => {
             trigger={
               <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                 <div>
-                  <BanIcon className="mr-2 h-4 w-4" />
+                  <BanIcon className="me-2 h-4 w-4" />
                   <Trans>Reject</Trans>
                 </div>
               </DropdownMenuItem>

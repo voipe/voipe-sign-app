@@ -23,4 +23,12 @@ export const APP_I18N_OPTIONS = {
   defaultLocale: 'en-US',
 } as const;
 
+/**
+ * Languages written right-to-left (VoIPe fork: Hebrew).
+ */
+export const RTL_LANGUAGE_CODES: readonly string[] = ['he'];
+
+export const getLanguageDirection = (lang?: string | null): 'rtl' | 'ltr' =>
+  lang && RTL_LANGUAGE_CODES.includes(lang) ? 'rtl' : 'ltr';
+
 export const ZSupportedLanguageCodeSchema = z.enum(SUPPORTED_LANGUAGE_CODES).catch('en');

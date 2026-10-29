@@ -98,7 +98,7 @@ export const DocumentSigningPageViewV2 = () => {
         {/* Left Section - Step Navigation */}
         <div
           className={cn(
-            'embed--DocumentWidgetContainer hidden flex-shrink-0 flex-col border-border border-r bg-background transition-[width] duration-300 lg:flex',
+            'embed--DocumentWidgetContainer hidden flex-shrink-0 flex-col border-border border-e bg-background transition-[width] duration-300 lg:flex',
             isSidebarCollapsed ? 'w-12' : 'w-80',
           )}
         >
@@ -125,7 +125,7 @@ export const DocumentSigningPageViewV2 = () => {
                   .with(RecipientRole.ASSISTANT, () => <Trans>Assist Document</Trans>)
                   .otherwise(() => null)}
 
-                <div className="ml-2 flex items-center gap-1">
+                <div className="ms-2 flex items-center gap-1">
                   <span className="rounded border bg-muted/50 px-2 py-0.5 text-muted-foreground text-xs">
                     <Plural
                       value={recipientFieldsRemaining.length}
@@ -149,7 +149,7 @@ export const DocumentSigningPageViewV2 = () => {
                 <motion.div
                   layout="size"
                   layoutId="document-flow-container-step"
-                  className="absolute inset-y-0 left-0 bg-primary"
+                  className="absolute inset-y-0 start-0 bg-primary"
                   style={{
                     width: `${requiredRecipientFields.length === 0 ? 100 : 100 - (100 / requiredRecipientFields.length) * (recipientFieldsRemaining.length ?? 0)}%`,
                   }}
@@ -175,7 +175,7 @@ export const DocumentSigningPageViewV2 = () => {
                   token={recipient.token}
                   trigger={
                     <Button variant="ghost" size="sm" className="w-full justify-start">
-                      <PaperclipIcon className="mr-2 h-4 w-4" />
+                      <PaperclipIcon className="me-2 h-4 w-4" />
                       <Trans>Attachments</Trans>
                     </Button>
                   }
@@ -188,7 +188,7 @@ export const DocumentSigningPageViewV2 = () => {
                   token={recipient.token}
                   trigger={
                     <Button variant="ghost" size="sm" className="w-full justify-start">
-                      <DownloadCloudIcon className="mr-2 h-4 w-4" />
+                      <DownloadCloudIcon className="me-2 h-4 w-4" />
                       <Trans>Download PDF</Trans>
                     </Button>
                   }
@@ -211,7 +211,7 @@ export const DocumentSigningPageViewV2 = () => {
                     }
                     trigger={
                       <Button variant="ghost" size="sm" className="w-full justify-start hover:text-destructive">
-                        <BanIcon className="mr-2 h-4 w-4" />
+                        <BanIcon className="me-2 h-4 w-4" />
                         <Trans>Reject Document</Trans>
                       </Button>
                     }
@@ -226,7 +226,7 @@ export const DocumentSigningPageViewV2 = () => {
                 <div className="px-4">
                   <Button asChild variant="ghost" className="w-full justify-start">
                     <Link to="/">
-                      <ArrowLeftIcon className="mr-2 h-4 w-4" />
+                      <ArrowLeftIcon className="me-2 h-4 w-4 rtl:rotate-180" />
                       <Trans>Return</Trans>
                     </Link>
                   </Button>
@@ -242,7 +242,7 @@ export const DocumentSigningPageViewV2 = () => {
           <div className="flex flex-col">
             {/* Horizontal envelope item selector */}
             {envelopeItems.length > 1 && (
-              <div className="flex h-fit space-x-2 overflow-x-auto p-2 pt-4 sm:p-4">
+              <div className="flex h-fit space-x-2 rtl:space-x-reverse overflow-x-auto p-2 pt-4 sm:p-4">
                 {envelopeItems.map((doc, i) => (
                   <EnvelopeItemSelector
                     key={doc.id}
@@ -294,7 +294,7 @@ export const DocumentSigningPageViewV2 = () => {
                   <span>
                     <Trans>Powered by</Trans>
                   </span>
-                  <BrandingLogo className="ml-2 inline-block h-[14px]" />
+                  <BrandingLogo className="ms-2 inline-block h-[14px]" />
                 </a>
               )}
             </div>

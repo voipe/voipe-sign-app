@@ -169,7 +169,7 @@ export const AccessAuth2FAForm = ({ onSubmit, token, error }: AccessAuth2FAFormP
               disabled={isRequesting2FAEmail}
             >
               <MailIcon className="h-5 w-5" />
-              <div className="text-left">
+              <div className="text-start">
                 <div className="font-medium">
                   <Trans>Email verification</Trans>
                 </div>
@@ -188,7 +188,7 @@ export const AccessAuth2FAForm = ({ onSubmit, token, error }: AccessAuth2FAFormP
                 disabled={isRequesting2FAEmail}
               >
                 <KeyIcon className="h-5 w-5" />
-                <div className="text-left">
+                <div className="text-start">
                   <div className="font-medium">
                     <Trans>Authenticator app</Trans>
                   </div>
@@ -206,7 +206,7 @@ export const AccessAuth2FAForm = ({ onSubmit, token, error }: AccessAuth2FAFormP
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={onGoBack}>
-              <ArrowLeftIcon className="h-4 w-4" />
+              <ArrowLeftIcon className="h-4 w-4 rtl:rotate-180" />
             </Button>
 
             <h3 className="font-semibold text-lg">
